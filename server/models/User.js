@@ -22,10 +22,15 @@ const userSchema = new mongoose.Schema(
       // Password is not required initially since FR-1 uses OTP for first access
       // and sets the password later. We'll add validation logic (hashing) in the controller later.
     },
-    // Field for FR-1: Used to verify the user during initial setup
+    // Field for FR-1: 1. Used to verify the user during initial setup
     otp: {
       type: String,
       select: false, // Don't return the OTP by default in queries
+    },
+    // 2. Crucial for verifying if the user has completed the sign-up process
+    isVerified: {
+        type: Boolean,
+        default: false,
     },
     // Field for FR-2/FR-3: Role-Based Access Control
     role: {

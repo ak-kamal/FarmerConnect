@@ -40,6 +40,11 @@ const userSchema = new mongoose.Schema(
       required: [true, 'User role is required'],
       default: 'farmer', // Default new users to 'farmer' if not specified
     },
+    // 3. NEW: Required for OTP Expiration (5 minutes)
+    otpExpires: {
+        type: Date,
+        select: false,
+    }
   },
   {
     timestamps: true, // Automatically adds createdAt and updatedAt fields

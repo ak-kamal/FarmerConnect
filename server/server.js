@@ -29,7 +29,7 @@ app.use('/api/users', require('./routes/authRoutes'));
 
 // FR-5 Routes: Farmer Actions (Placeholder for produce upload)
 // This assumes the FR-5 developer names their route file farmerRoutes.js
-app.use('/api/farmer', require('./routes/farmerRoutes')); 
+//app.use('/api/farmer', require('./routes/farmerRoutes')); 
 // You must ensure server/routes/farmerRoutes.js exists, even if it's empty for now.
 // ====================================================================
 

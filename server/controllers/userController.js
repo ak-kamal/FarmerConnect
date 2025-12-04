@@ -24,7 +24,7 @@ const generateToken = (id, role) => {
 // @route   POST /api/users/signup
 // @access  Public
 const signUp = asyncHandler(async (req, res) => {
-    const { name, email } = req.body; // No password yet
+    const { name, email, role } = req.body; // No password yet
 
     if (!name || !email) {
         res.status(400);
@@ -52,7 +52,7 @@ const signUp = asyncHandler(async (req, res) => {
         user = await User.create({
             name,
             email,
-            // role defaults to 'farmer' per model
+            role: role,
             otp: verificationCode,
             otpExpires: otpExpires,
             isVerified: false,

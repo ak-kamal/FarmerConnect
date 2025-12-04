@@ -37,8 +37,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       // The allowed roles in our application
       enum: ['farmer', 'wholesaler', 'transport', 'admin'],
-      required: [true, 'User role is required'],
-      default: 'farmer', // Default new users to 'farmer' if not specified
+      required: [true, 'User role is required']
     },
     // 3. NEW: Required for OTP Expiration (5 minutes)
     otpExpires: {

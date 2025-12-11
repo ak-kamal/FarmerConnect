@@ -1,6 +1,5 @@
-// --- Email Service Utility (Production Implementation using Nodemailer) ---
-
-const nodemailer = require("nodemailer");
+// server/utils/emailService.js
+import nodemailer from "nodemailer";
 
 /**
  * Sends a verification email to the user with a 6-digit OTP.
@@ -9,21 +8,20 @@ const nodemailer = require("nodemailer");
  * @param {string} email The recipient's email address.
  * @param {string} code The 6-digit verification code (OTP).
  */
-const sendVerificationEmail = async (email, code) => {
+export const sendVerificationEmail = async (email, code) => {
   try {
     // Create transporter using Gmail + App Password
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
-        user: process.env.EMAIL_USER,    // your Gmail address
-        pass: process.env.EMAIL_PASS,    // your Gmail App Password
+        user: process.env.EMAIL_USER, // your Gmail address
+        pass: process.env.EMAIL_PASS, // your Gmail App Password
       },
     });
 
     // Email structure
     const mailOptions = {
-      from: `"Farmer Connect" <no-reply@farmerconnect.com>`,  
-      // Gmail will still send from your actual Gmail but show this name
+      from: `"Farmer Connect" <no-reply@farmerconnect.com>`,
       to: email,
       subject: "Your Farmer Connect Verification Code",
       text: `
@@ -48,8 +46,4 @@ Farmer Connect Team
     console.error("Error sending OTP email:", error);
     throw error;
   }
-};
-
-module.exports = {
-  sendVerificationEmail,
 };

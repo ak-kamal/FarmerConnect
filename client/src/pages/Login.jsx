@@ -66,7 +66,7 @@ const Login = () => {
     <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50">
       <div className="w-full max-w-md bg-white p-8 rounded-xl shadow-2xl border border-gray-100">
         <h2 className="text-3xl font-extrabold text-gray-900 text-center mb-6">
-          Sign In to Farmer Connect
+          Log in to Farmer Connect
         </h2>
         <form onSubmit={onSubmit} className="space-y-6">
           <div>
@@ -122,7 +122,7 @@ const Login = () => {
           </div>
           
           <p className="mt-4 text-center text-sm text-gray-600">
-            Don't have an account? 
+            Don't have an account?  
             <a href="/signup" className="font-medium text-green-600 hover:text-green-500 ml-1">
               Sign Up
             </a>

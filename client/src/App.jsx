@@ -1,76 +1,20 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 
-// =========================================================================
-// 1. AUTH CONTEXT AND HOOK (Consolidated from client/src/context/AuthContext.jsx)
-// =========================================================================
-
-const AuthContext = createContext(null);
-
-export const useAuth = () => {
-  return useContext(AuthContext);
-};
-
-export const AuthProvider = ({ children }) => {
-  const [token, setToken] = useState(localStorage.getItem('userToken') || null);
-  const [user, setUser] = useState(JSON.parse(localStorage.getItem('user')) || null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  const saveAuthData = (token, userData) => {
-    localStorage.setItem('userToken', token);
-    localStorage.setItem('user', JSON.stringify(userData));
-    setToken(token);
-    setUser(userData);
-  };
-
-  const logout = async () => {
-    try {
-      // Call the server endpoint 
-      await fetch('/api/users/logout', { 
-        method: 'POST', 
-        headers: {
-            'Authorization': `Bearer ${token}`,
-        },
-      });
-    } catch (error) {
-        console.error("Logout API call failed, proceeding with local cleanup:", error);
-    }
-
-    // Critical cleanup steps
-    localStorage.removeItem('userToken'); 
-    localStorage.removeItem('user'); 
-    setToken(null);
-    setUser(null);
-    
-    // Force redirect to login page
-    window.location.replace('/login'); 
-  };
-  
-  useEffect(() => {
-    if (token || user) {
-        setIsLoading(false);
-    } else {
-        localStorage.removeItem('userToken');
-        localStorage.removeItem('user');
-        setToken(null);
-        setUser(null);
-        setIsLoading(false);
-    }
-  }, []); 
-
-  const contextValue = {
-    token,
-    user,
-    isLoading,
-    saveAuthData,
-    logout,
-  };
-
-  return (
-    <AuthContext.Provider value={contextValue}>
-      {children}
-    </AuthContext.Provider>
-  );
-};
+import Home from "./pages/Home";
+import {
+  Leaf,
+  Mail,
+  Lock,
+  User,
+  Loader2,
+  ShieldCheck,
+  KeyRound,
+  AlertCircle,
+  Clock3,
+  CheckCircle2,
+} from "lucide-react";
+import Dashboard from "./pages/Dashboard.jsx";
+import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
 
 
 // =========================================================================
@@ -81,8 +25,8 @@ export const AuthProvider = ({ children }) => {
 const Login = () => {
   const { saveAuthData } = useAuth();
   const [formData, setFormData] = useState({
-    email: '',
-    password: '',
+    email: "",
+    password: "",
   });
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -100,135 +44,178 @@ const Login = () => {
     setError(null);
 
     if (!email || !password) {
-      setError('Please enter both email and password.');
+      setError("Please enter both email and password.");
       setLoading(false);
       return;
     }
 
     try {
-      const response = await fetch('/api/users/login', { 
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', },
+      const response = await fetch("/api/users/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
-      
-      // FIX FOR JSON ERROR: Read text first to catch server crashes
-      const text = await response.text();
-      let data = {};
 
-      if (text) {
-        try {
-          data = JSON.parse(text);
-        } catch (e) {
-          // If the server crashes and sends non-JSON data (the root cause of the error)
-          throw new Error('Server returned an unreadable response. Check Node console for backend crash.');
-        }
+      let data;
+      try {
+        data = await response.json();
+      } catch {
+        throw new Error(
+          "Server returned an unreadable response. Check backend logs."
+        );
       }
 
       if (!response.ok) {
-        throw new Error(data.message || 'Login failed. Check server status.');
+        throw new Error(data.message || "Login failed. Check server status.");
       }
 
-      saveAuthData(data.token, { 
-        id: data._id, 
-        name: data.name, 
-        email: data.email, 
-        role: data.role
+      saveAuthData(data.token, {
+        id: data._id,
+        name: data.name,
+        email: data.email,
+        role: data.role,
       });
-      
     } catch (err) {
-      console.error('Login error:', err.message);
-      setError(err.message || 'An unexpected error occurred during login.');
+      console.error("Login error:", err.message);
+      setError(
+        err.message || "An unexpected error occurred during login."
+      );
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    // Aesthetics: Brighter background for contrast (using a light green gradient)
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50 font-sans"> 
-      <div className="w-full max-w-md bg-white p-10 rounded-2xl shadow-xl border border-gray-100 transform transition duration-300 hover:shadow-2xl">
-        
-        <div className="flex justify-center mb-6">
-            <span className="text-5xl text-green-700">🌱</span> 
+    <main className="min-h-screen bg-gradient-to-b from-[#02130b] via-[#020a07] to-black flex items-center justify-center px-4">
+      <div className="w-full max-w-md space-y-8">
+        {/* Brand header */}
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-500 to-lime-400 flex items-center justify-center shadow-lg shadow-emerald-500/40">
+            <Leaf className="w-5 h-5 text-black" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-emerald-300">
+              Farmer Connect
+            </p>
+            <p className="text-xs text-emerald-100/70">
+              Smarter markets for every harvest
+            </p>
+          </div>
         </div>
 
-        <h2 className="text-3xl font-extrabold text-gray-900 text-center mb-8">
-          Sign In to Farmer Connect
-        </h2>
-        <form onSubmit={onSubmit} className="space-y-6">
-          <div>
-            <label htmlFor="email" className="block text-sm font-semibold text-gray-700">
-              Email Address
-            </label>
-            <input 
-              id="email" 
-              name="email" 
-              type="email" 
-              required 
-              value={email} 
-              onChange={onChange} 
-              className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-inner placeholder-gray-400 focus:ring-green-500 focus:border-green-500 transition duration-150 text-base" 
-              placeholder="you@example.com" 
-            />
-          </div>
+        {/* Card */}
+        <div className="card bg-black/60 border border-emerald-500/30 shadow-2xl backdrop-blur-md">
+          <div className="card-body space-y-6">
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-emerald-300 mb-2">
+                Welcome back
+              </p>
+              <h2 className="text-2xl md:text-3xl font-bold text-white">
+                Sign in to your account
+              </h2>
+              <p className="text-sm text-gray-400 mt-1">
+                Access your dashboard to manage harvests, offers, and trips.
+              </p>
+            </div>
 
-          <div>
-            <label htmlFor="password" className="block text-sm font-semibold text-gray-700">
-              Password
-            </label>
-            <input 
-              id="password" 
-              name="password" 
-              type="password" 
-              required 
-              value={password} 
-              onChange={onChange} 
-              className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-inner placeholder-gray-400 focus:ring-green-500 focus:border-green-500 transition duration-150 text-base" 
-              placeholder="••••••••" 
-            />
-          </div>
+            {error && (
+              <div className="alert alert-error bg-red-900/40 border-red-500/40 text-sm">
+                <AlertCircle className="w-4 h-4" />
+                <span>{error}</span>
+              </div>
+            )}
 
-          {error && (<div className="p-3 text-sm text-red-700 bg-red-100 border border-red-300 rounded-xl">{error}</div>)}
+            <form onSubmit={onSubmit} className="space-y-4">
+              <div className="space-y-1">
+                <label
+                  htmlFor="email"
+                  className="text-xs font-medium text-gray-200"
+                >
+                  Email address
+                </label>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-3 flex items-center">
+                    <Mail className="w-4 h-4 text-emerald-300/80" />
+                  </span>
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    required
+                    value={email}
+                    onChange={onChange}
+                    className="input input-bordered w-full pl-9 bg-black/60 border-white/10 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400 text-sm placeholder:text-gray-500"
+                    placeholder="farmer@example.com"
+                  />
+                </div>
+              </div>
 
-          <div className="pt-4">
-            <button 
-              type="submit" 
-              disabled={loading} 
-              className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-xl text-lg font-bold text-white transition duration-200 shadow-lg ${
-                loading
-                  ? 'bg-green-400 cursor-not-allowed'
-                  : 'bg-green-600 hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500'
-              }`}
-            >
-              {loading ? 'Authenticating...' : 'Sign In'}
-            </button>
+              <div className="space-y-1">
+                <label
+                  htmlFor="password"
+                  className="text-xs font-medium text-gray-200"
+                >
+                  Password
+                </label>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-3 flex items-center">
+                    <Lock className="w-4 h-4 text-emerald-300/80" />
+                  </span>
+                  <input
+                    id="password"
+                    name="password"
+                    type="password"
+                    required
+                    value={password}
+                    onChange={onChange}
+                    className="input input-bordered w-full pl-9 bg-black/60 border-white/10 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400 text-sm placeholder:text-gray-500"
+                    placeholder="Enter your password"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="btn btn-block rounded-full bg-emerald-500 border-none text-black font-semibold mt-2 hover:bg-emerald-400 disabled:bg-emerald-700 disabled:text-black"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Signing you in…</span>
+                  </>
+                ) : (
+                  "Sign In"
+                )}
+              </button>
+            </form>
+
+            <p className="text-xs text-gray-400 text-center mt-2">
+              New to Farmer Connect?{" "}
+              <a
+                href="/signup"
+                onClick={(e) => {
+                  e.preventDefault();
+                  window.history.pushState({}, "", "/signup");
+                  window.dispatchEvent(new PopStateEvent("popstate"));
+                }}
+                className="text-emerald-300 hover:text-emerald-200 font-medium"
+              >
+                Create an account
+              </a>
+            </p>
           </div>
-          
-          <p className="mt-6 text-center text-sm text-gray-600">
-            Don't have an account? 
-            <a href="/signup" onClick={(e) => { e.preventDefault(); window.history.pushState({}, '', '/signup'); window.location.reload(); }} className="font-bold text-green-600 hover:text-green-800 ml-1 transition duration-150">
-              Sign Up
-            </a>
-          </p>
-          <p className="text-center text-sm">
-            <a href="/forgot-password" onClick={(e) => { e.preventDefault(); /* Implement forgot password logic */ }} className="font-medium text-blue-600 hover:text-blue-800 transition duration-150">
-              Forgot Password?
-            </a>
-          </p>
-        </form>
+        </div>
       </div>
-    </div>
+    </main>
   );
 };
 
-
-// --- 2B. Signup Component (Aesthetic Improvements) ---
 const Signup = ({ onSignupSuccess }) => {
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    role: '', 
+    name: "",
+    email: "",
+    role: "",
   });
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -241,315 +228,477 @@ const Signup = ({ onSignupSuccess }) => {
     setError(null);
     setSuccess(null);
   };
-  
+
   const availableRoles = [
-      { value: 'farmer', label: 'Farmer' },
-      { value: 'wholesaler', label: 'Wholesaler' },
-      { value: 'transport', label: 'Transport Company' },
+    { value: "farmer", label: "Farmer" },
+    { value: "wholesaler", label: "Wholesaler" },
+    { value: "transport", label: "Transport Company" },
   ];
 
   const onSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setSuccess(null);
 
     if (!name || !email) {
-      setError('Please fill in your name and email.');
+      setError("Please enter your full name and email address.");
       setLoading(false);
       return;
     }
-    
+
     if (!role) {
-      setError('Your intended role must be selected.');
+      setError("Your intended role must be selected.");
       setLoading(false);
       return;
     }
 
     try {
-      const response = await fetch('/api/users/signup', { 
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', },
+      const response = await fetch("/api/users/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, email, role }),
       });
 
-      const text = await response.text();
-      let data = {};
-      if (text) {
-        try {
-          data = JSON.parse(text);
-        } catch (e) {
-          throw new Error('Server returned an unreadable response. Check Node console for backend crash.');
-        }
+      let data;
+      try {
+        data = await response.json();
+      } catch {
+        throw new Error("Server returned an unreadable response.");
       }
-      
+
       if (!response.ok) {
-        throw new Error(data.message || 'Registration failed.');
+        throw new Error(
+          data.message || "Registration failed. Please try again."
+        );
       }
 
-      setSuccess(data.message);
-      
-      setTimeout(() => onSignupSuccess(email), 1000); 
+      setSuccess(
+        data.message ||
+          "Registration successful! Check your email for the verification code."
+      );
 
+      if (typeof onSignupSuccess === "function") {
+        onSignupSuccess(email);
+      }
     } catch (err) {
-      console.error('Signup error:', err.message);
-      setError(err.message || 'An unexpected error occurred during signup.');
+      console.error("Signup error:", err.message);
+      setError(err.message || "Registration failed. Please try again later.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    // Aesthetics: Brighter background for contrast and better centering
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gray-100 font-sans">
-      <div className="w-full max-w-lg bg-white p-10 rounded-2xl shadow-xl border border-gray-200 transform transition duration-300 hover:shadow-2xl">
-        <h2 className="text-3xl font-extrabold text-gray-900 text-center mb-8">
-          Create Your Farmer Connect Account
-        </h2>
-        
-        {success && (
-            <div className="p-3 mb-4 text-base text-green-700 bg-green-100 rounded-xl font-medium border border-green-300">
-              {success} You are being redirected...
+    <main className="min-h-screen bg-gradient-to-b from-[#02130b] via-[#020a07] to-black flex items-center justify-center px-4">
+      <div className="w-full max-w-lg space-y-8">
+        {/* Brand header */}
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-500 to-lime-400 flex items-center justify-center shadow-lg shadow-emerald-500/40">
+            <Leaf className="w-5 h-5 text-black" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-emerald-300">
+              Farmer Connect
+            </p>
+            <p className="text-xs text-emerald-100/70">
+              Built for farmers, buyers & transport
+            </p>
+          </div>
+        </div>
+
+        {/* Card */}
+        <div className="card bg-black/60 border border-emerald-500/30 shadow-2xl backdrop-blur-md">
+          <div className="card-body space-y-6">
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-emerald-300 mb-2">
+                Create your account
+              </p>
+              <h2 className="text-2xl md:text-3xl font-bold text-white">
+                Join the Farmer Connect network
+              </h2>
+              <p className="text-sm text-gray-400 mt-1">
+                Set up your profile so you can upload produce, receive offers,
+                or confirm trips.
+              </p>
             </div>
-        )}
-        
-        <form onSubmit={onSubmit} className="space-y-6">
-          
-          {/* Role Selection Field (Improved Spacing and Font) */}
-          <div className="space-y-2">
-            <label className="block text-sm font-semibold text-gray-800">
-              Select Your Intended Role <span className="text-red-500">*</span>
-            </label>
-            <div className="flex flex-col sm:flex-row justify-between space-y-2 sm:space-y-0 sm:space-x-4 bg-gray-50 p-4 rounded-xl border border-gray-200">
-              {availableRoles.map((r) => (
-                <label key={r.value} className="flex items-center justify-center space-x-2 cursor-pointer p-3 rounded-xl transition duration-150 flex-grow text-base font-bold text-gray-600 hover:bg-gray-100 has-[:checked]:bg-green-100 has-[:checked]:text-green-800 border-2 has-[:checked]:border-green-600 shadow-md">
-                  <input
-                    type="radio"
-                    name="role"
-                    value={r.value}
-                    checked={role === r.value}
-                    onChange={onChange}
-                    required
-                    className="h-5 w-5 text-green-600 focus:ring-green-500 border-gray-400 rounded"
-                  />
-                  <span>{r.label}</span>
+
+            {error && (
+              <div className="alert alert-error bg-red-900/40 border-red-500/40 text-sm">
+                <AlertCircle className="w-4 h-4" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            {success && (
+              <div className="alert bg-emerald-900/30 border-emerald-500/40 text-sm">
+                <CheckCircle2 className="w-4 h-4 text-emerald-300" />
+                <span>{success}</span>
+              </div>
+            )}
+
+            <form onSubmit={onSubmit} className="space-y-4">
+              <div className="space-y-1">
+                <label
+                  htmlFor="name"
+                  className="text-xs font-medium text-gray-200"
+                >
+                  Full name
                 </label>
-              ))}
-            </div>
-          </div>
-          {/* End Role Selection */}
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-3 flex items-center">
+                    <User className="w-4 h-4 text-emerald-300/80" />
+                  </span>
+                  <input
+                    id="name"
+                    name="name"
+                    type="text"
+                    required
+                    value={name}
+                    onChange={onChange}
+                    className="input input-bordered w-full pl-9 bg-black/60 border-white/10 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400 text-sm placeholder:text-gray-500"
+                    placeholder=""
+                  />
+                </div>
+              </div>
 
-          <div>
-            <label htmlFor="name" className="block text-sm font-semibold text-gray-700">Full Name</label>
-            <input id="name" name="name" type="text" required value={name} onChange={onChange} className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-inner placeholder-gray-400 focus:ring-green-500 focus:border-green-500 text-base" placeholder="John Doe" />
-          </div>
-          
-          <div>
-            <label htmlFor="email" className="block text-sm font-semibold text-gray-700">Email Address</label>
-            <input id="email" name="email" type="email" required value={email} onChange={onChange} className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-inner placeholder-gray-400 focus:ring-green-500 focus:border-green-500 text-base" placeholder="you@example.com" />
-          </div>
+              <div className="space-y-1">
+                <label
+                  htmlFor="email"
+                  className="text-xs font-medium text-gray-200"
+                >
+                  Email address
+                </label>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-3 flex items-center">
+                    <Mail className="w-4 h-4 text-emerald-300/80" />
+                  </span>
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    required
+                    value={email}
+                    onChange={onChange}
+                    className="input input-bordered w-full pl-9 bg-black/60 border-white/10 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400 text-sm placeholder:text-gray-500"
+                    placeholder="you@example.com"
+                  />
+                </div>
+              </div>
 
-          {error && (<div className="p-3 text-sm text-red-700 bg-red-100 border border-red-300 rounded-xl">{error}</div>)}
+              {/* Role selection */}
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-gray-200">
+                  Select your intended role
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  {availableRoles.map((r) => (
+                    <label
+                      key={r.value}
+                      className={`
+                        cursor-pointer rounded-2xl border px-3 py-2 text-xs flex items-center gap-2
+                        ${
+                          role === r.value
+                            ? "border-emerald-400 bg-emerald-500/20 text-emerald-100"
+                            : "border-white/10 bg-black/40 text-gray-300 hover:border-emerald-300/70"
+                        }
+                      `}
+                    >
+                      <input
+                        type="radio"
+                        name="role"
+                        value={r.value}
+                        checked={role === r.value}
+                        onChange={onChange}
+                        className="radio radio-xs radio-emerald"
+                      />
+                      <span>{r.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
 
-          <div className="pt-4">
-            <button type="submit" disabled={loading || success} className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-xl text-lg font-bold text-white transition duration-200 shadow-lg ${loading || success ? 'bg-green-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500'}`}>
-              {loading ? 'Sending OTP...' : 'Sign Up & Get Verification Code'}
-            </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="btn btn-block rounded-full bg-emerald-500 border-none text-black font-semibold mt-2 hover:bg-emerald-400 disabled:bg-emerald-700 disabled:text-black"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Sending verification code…</span>
+                  </>
+                ) : (
+                  "Sign Up & Get Verification Code"
+                )}
+              </button>
+            </form>
+
+            <p className="text-xs text-gray-400 text-center mt-2">
+              Already registered?{" "}
+              <a
+                href="/login"
+                onClick={(e) => {
+                  e.preventDefault();
+                  window.history.pushState({}, "", "/login");
+                  window.dispatchEvent(new PopStateEvent("popstate"));
+                }}
+                className="text-emerald-300 hover:text-emerald-200 font-medium"
+              >
+                Sign in
+              </a>
+            </p>
           </div>
-          
-          <p className="mt-4 text-center text-sm text-gray-600">
-            Already have an account? 
-            <a href="/login" onClick={(e) => { e.preventDefault(); window.history.pushState({}, '', '/login'); window.location.reload(); }} className="font-bold text-green-600 hover:text-green-800 ml-1">
-              Sign In
-            </a>
-          </p>
-        </form>
+        </div>
       </div>
-    </div>
+    </main>
   );
 };
 
 // --- 2C. Verification Component ---
 const Verification = ({ verificationEmail, onVerificationSuccess }) => {
-  const initialEmail = verificationEmail || localStorage.getItem('verificationEmail') || '';
-  
+  const initialEmail =
+    verificationEmail || localStorage.getItem("verificationEmail") || "";
+
   const [email, setEmail] = useState(initialEmail);
-  const [otp, setOtp] = useState('');
+  const [otp, setOtp] = useState("");
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
-  
-  const INITIAL_TIMER = 300; // 5 minutes = 300 seconds
+
+  const INITIAL_TIMER = 300; // 5 minutes
   const [timer, setTimer] = useState(INITIAL_TIMER);
   const [otpExpired, setOtpExpired] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
 
-  // Timer Logic
+  // Timer logic
   useEffect(() => {
-    if (timer > 0) {
-      const interval = setInterval(() => {
-        setTimer((prev) => prev - 1);
-      }, 1000);
-
-      return () => clearInterval(interval);
-    } else {
+    if (timer <= 0) {
       setOtpExpired(true);
+      return;
     }
+    const id = setInterval(() => {
+      setTimer((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(id);
   }, [timer]);
-  
+
   const formatTime = (seconds) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
-    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+    return `${minutes.toString().padStart(2, "0")}:${remainingSeconds
+      .toString()
+      .padStart(2, "0")}`;
   };
 
-  // Verification Handler
   const handleVerify = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
     if (otpExpired) {
-      setError('Verification code has expired. Please click Resend OTP.');
+      setError("Verification code has expired. Please click Resend OTP.");
       setLoading(false);
       return;
     }
-    
+
     if (!email || otp.length !== 6) {
-      setError('Please enter a valid 6-digit code and ensure your email is correct.');
+      setError(
+        "Please enter a valid 6-digit code and make sure your email is correct."
+      );
       setLoading(false);
       return;
     }
 
     try {
-      const response = await fetch('/api/users/verify', { 
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', },
+      const response = await fetch("/api/users/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, otp }),
       });
 
-      const text = await response.text();
-      let data = {};
-      if (text) {
-        try { data = JSON.parse(text); } catch (e) { throw new Error('Server returned an unreadable response.'); }
+      let data;
+      try {
+        data = await response.json();
+      } catch {
+        throw new Error("Server returned an unreadable response.");
       }
 
       if (!response.ok) {
-        throw new Error(data.message || 'Verification failed.');
+        throw new Error(
+          data.message || "Verification failed. Please check the code."
+        );
       }
 
-      // Successful verification: Proceed to set password step
-      onVerificationSuccess(email); 
+      localStorage.setItem("verifiedEmail", email);
+      localStorage.removeItem("verificationEmail");
 
+      if (typeof onVerificationSuccess === "function") {
+        onVerificationSuccess(email);
+      }
     } catch (err) {
-      console.error('Verification error:', err.message);
-      setError(err.message || 'An unexpected error occurred during verification.');
+      console.error("Verification error:", err.message);
+      setError(
+        err.message ||
+          "Verification failed. Please check the code or try again."
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  // Resend OTP Handler
   const handleResend = async () => {
     setResendLoading(true);
     setError(null);
 
+    if (!email) {
+      setError("Please enter your email to resend the code.");
+      setResendLoading(false);
+      return;
+    }
+
     try {
-      const response = await fetch('/api/users/resend-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', },
+      const response = await fetch("/api/users/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
 
-      const text = await response.text();
-      let data = {};
-      if (text) {
-        try { data = JSON.parse(text); } catch (e) { throw new Error('Server returned an unreadable response.'); }
+      let data;
+      try {
+        data = await response.json();
+      } catch {
+        throw new Error("Server returned an unreadable response.");
       }
-      
+
       if (!response.ok) {
-        throw new Error(data.message || 'Resend failed.');
+        throw new Error(
+          data.message ||
+            "Could not resend code. Please wait a moment and try again."
+        );
       }
-      
-      // Resend success: Reset timer and unmark expired state
-      setTimer(INITIAL_TIMER); 
+
+      setTimer(INITIAL_TIMER);
       setOtpExpired(false);
-      localStorage.setItem('verificationEmail', email);
-
+      localStorage.setItem("verificationEmail", email);
       setError(null);
-      // NOTE: Using a custom message instead of alert()
-      alert(data.message || 'A new OTP has been sent to your email.');
-
+      alert(
+        data.message || "A new OTP has been sent to your email address."
+      );
     } catch (err) {
-      console.error('Resend error:', err.message);
-      setError(err.message || 'Could not resend code. Please check your email.');
+      console.error("Resend error:", err.message);
+      setError(
+        err.message || "Could not resend code. Please check your email."
+      );
     } finally {
       setResendLoading(false);
     }
   };
 
   return (
-    // IMPROVEMENT: Brighter background and clean layout
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gray-100 font-sans">
-      <div className="w-full max-w-md bg-white p-10 rounded-2xl shadow-2xl border border-gray-200">
-        <h2 className="text-3xl font-extrabold text-gray-900 text-center mb-6">
-          Verify Your Email
-        </h2>
-        
-        <p className="text-center text-md text-gray-700 mb-6">
-            We sent a 6-digit code to 
-            <strong className="text-green-600 block">{email}</strong>.
-            Please enter it below to proceed to password setup.
-        </p>
-
-        <form onSubmit={handleVerify} className="space-y-6">
-          
+    <main className="min-h-screen bg-gradient-to-b from-[#02130b] via-[#020a07] to-black flex items-center justify-center px-4">
+      <div className="w-full max-w-md space-y-8">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-500 to-lime-400 flex items-center justify-center shadow-lg shadow-emerald-500/40">
+            <ShieldCheck className="w-5 h-5 text-black" />
+          </div>
           <div>
-            <label htmlFor="otp" className="block text-sm font-medium text-gray-700">Verification Code</label>
-            <input id="otp" name="otp" type="text" required value={otp} onChange={(e) => setOtp(e.target.value)} maxLength="6" className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-inner placeholder-gray-400 text-center text-2xl font-mono tracking-widest focus:ring-green-500 focus:border-green-500" placeholder="••••••" />
-          </div>
-          
-          <div className="text-center py-2">
-            {otpExpired ? (
-                <p className="text-lg text-red-600 font-bold">Code Expired.</p>
-            ) : (
-                <p className="text-md text-gray-700">
-                    Expires in: 
-                    <strong className="text-blue-600 ml-1 font-mono text-lg">{formatTime(timer)}</strong>
-                </p>
-            )}
-          </div>
-
-          {error && (<div className="p-3 text-sm text-red-700 bg-red-100 border border-red-300 rounded-lg">{error}</div>)}
-
-          <div>
-            <button type="submit" disabled={loading || otpExpired} className={`w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg text-lg font-semibold text-white transition duration-200 shadow-md ${loading || otpExpired ? 'bg-green-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500'}`}>
-              {loading ? 'Verifying...' : 'Verify Account'}
-            </button>
-          </div>
-        </form>
-        
-        <div className="mt-6 border-t pt-4 text-center">
-            <button onClick={handleResend} disabled={resendLoading || !otpExpired} className={`text-sm font-medium transition duration-200 ${resendLoading || !otpExpired ? 'text-gray-400 cursor-not-allowed' : 'text-blue-600 hover:text-blue-700 font-semibold'}`}>
-                {resendLoading ? 'Sending New Code...' : 'Resend OTP'}
-            </button>
-            <p className="text-xs text-gray-500 mt-1">
-                A new code can be requested once the current one expires.
+            <p className="text-sm font-semibold text-emerald-300">
+              Verify your email
             </p>
+            <p className="text-xs text-emerald-100/70">
+              We’ve sent a code to your inbox.
+            </p>
+          </div>
         </div>
-        
+
+        <div className="card bg-black/60 border border-emerald-500/30 shadow-2xl backdrop-blur-md">
+          <div className="card-body space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl md:text-2xl font-bold text-white">
+                Enter the 6-digit code
+              </h2>
+              <div className="flex items-center gap-1 text-xs text-emerald-200">
+                <Clock3 className="w-4 h-4" />
+                <span>{formatTime(timer)}</span>
+              </div>
+            </div>
+
+            <p className="text-sm text-gray-400">
+              Check <span className="font-mono text-emerald-200">{email}</span>{" "}
+              for your verification code. Codes expire after 5 minutes.
+            </p>
+
+            {error && (
+              <div className="alert alert-error bg-red-900/40 border-red-500/40 text-sm">
+                <AlertCircle className="w-4 h-4" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleVerify} className="space-y-4">
+              <div className="space-y-1">
+                <label
+                  htmlFor="otp"
+                  className="text-xs font-medium text-gray-200"
+                >
+                  6-digit code
+                </label>
+                <input
+                  id="otp"
+                  type="text"
+                  maxLength={6}
+                  value={otp}
+                  onChange={(e) =>
+                    setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))
+                  }
+                  className="input input-bordered w-full text-center tracking-[0.5em] text-lg bg-black/60 border-white/10 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400"
+                  placeholder="••••••"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="btn btn-block rounded-full bg-emerald-500 border-none text-black font-semibold hover:bg-emerald-400 disabled:bg-emerald-700 disabled:text-black"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Verifying…</span>
+                  </>
+                ) : (
+                  "Verify & Continue"
+                )}
+              </button>
+            </form>
+
+            <div className="flex items-center justify-between text-xs text-gray-400">
+              <span>{otpExpired ? "Code expired." : "Didn’t receive the code?"}</span>
+              <button
+                type="button"
+                onClick={handleResend}
+                disabled={resendLoading}
+                className="btn btn-xs rounded-full bg-emerald-500/20 border border-emerald-400 text-emerald-100 hover:bg-emerald-500/40 disabled:opacity-60"
+              >
+                {resendLoading ? "Resending…" : "Resend OTP"}
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
+    </main>
   );
 };
 
 // --- 2D. Set Password Component ---
 const SetPassword = ({ verifiedEmail }) => {
   const { saveAuthData } = useAuth();
-  
-  const email = verifiedEmail || localStorage.getItem('verifiedEmail') || '';
+
+  const email = verifiedEmail || localStorage.getItem("verifiedEmail") || "";
 
   const [formData, setFormData] = useState({
-    password: '',
-    confirmPassword: '',
+    password: "",
+    confirmPassword: "",
   });
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -567,248 +716,201 @@ const SetPassword = ({ verifiedEmail }) => {
     setError(null);
 
     if (!password || !confirmPassword) {
-      setError('Please enter and confirm your new password.');
+      setError("Please enter and confirm your password.");
       setLoading(false);
       return;
     }
-    
+
     if (password !== confirmPassword) {
-      setError('Passwords do not match.');
+      setError("Passwords do not match.");
       setLoading(false);
       return;
     }
-    
+
     if (password.length < 8) {
-      setError('Password must be at least 8 characters long.');
+      setError("Password must be at least 8 characters long.");
       setLoading(false);
       return;
     }
 
     try {
-      const response = await fetch('/api/users/set-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', },
+      const response = await fetch("/api/users/set-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
 
-      const text = await response.text();
-      let data = {};
-      if (text) {
-        try { data = JSON.parse(text); } catch (e) { throw new Error('Server returned an unreadable response.'); }
+      let data;
+      try {
+        data = await response.json();
+      } catch {
+        throw new Error("Server returned an unreadable response.");
       }
 
       if (!response.ok) {
-        throw new Error(data.message || 'Password setup failed.');
+        throw new Error(
+          data.message || "Unable to set password. Please try again."
+        );
       }
 
-      saveAuthData(data.token, { 
-        id: data._id, 
-        name: data.name, 
-        email: data.email, 
-        role: data.role
+      saveAuthData(data.token, {
+        id: data._id,
+        name: data.name,
+        email: data.email,
+        role: data.role,
       });
-      
-      localStorage.removeItem('verificationEmail');
-      localStorage.removeItem('verifiedEmail');
-      
+
+      localStorage.removeItem("verificationEmail");
+      localStorage.removeItem("verifiedEmail");
     } catch (err) {
-      console.error('Set Password error:', err.message);
-      setError(err.message || 'An unexpected error occurred during password setup.');
+      console.error("Set password error:", err.message);
+      setError(
+        err.message ||
+          "An unexpected error occurred while setting your password."
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  if (!email) {
-      return (
-          <div className="min-h-screen flex items-center justify-center p-4 bg-gray-100 text-center">
-              <div className="p-8 bg-white rounded-xl shadow-2xl">
-                  <p className="text-xl text-red-500 font-bold">Error: Missing Verification Context</p>
-                  <p className="mt-2 text-gray-600">Please return to the <a href="/signup" onClick={(e) => { e.preventDefault(); window.history.pushState({}, '', '/signup'); window.location.reload(); }} className="text-green-600 hover:underline">Sign Up</a> page to restart the verification process.</p>
-              </div>
-          </div>
-      );
-  }
-
   return (
-    // IMPROVEMENT: Brighter background and clean layout
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gray-100 font-sans">
-      <div className="w-full max-w-md bg-white p-10 rounded-2xl shadow-2xl border border-gray-200">
-        <h2 className="text-3xl font-extrabold text-gray-900 text-center mb-6">
-          Final Step: Set Your Password
-        </h2>
-        
-        <p className="text-center text-md text-gray-700 mb-6">
-            Your account (<strong className="text-green-600">{email}</strong>) is verified. Choose a secure password for future logins.
-        </p>
-
-        <form onSubmit={onSubmit} className="space-y-6">
+    <main className="min-h-screen bg-gradient-to-b from-[#02130b] via-[#020a07] to-black flex items-center justify-center px-4">
+      <div className="w-full max-w-md space-y-8">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-500 to-lime-400 flex items-center justify-center shadow-lg shadow-emerald-500/40">
+            <KeyRound className="w-5 h-5 text-black" />
+          </div>
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700">New Password (Min 8 Characters)</label>
-            <input id="password" name="password" type="password" required value={password} onChange={onChange} className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-inner placeholder-gray-400 focus:ring-green-500 focus:border-green-500" placeholder="••••••••" />
+            <p className="text-sm font-semibold text-emerald-300">
+              Create your password
+            </p>
+            <p className="text-xs text-emerald-100/70">
+              This secures your Farmer Connect account.
+            </p>
           </div>
-
-          <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">Confirm Password</label>
-            <input id="confirmPassword" name="confirmPassword" type="password" required value={confirmPassword} onChange={onChange} className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-inner placeholder-gray-400 focus:ring-green-500 focus:border-green-500" placeholder="••••••••" />
-          </div>
-
-          {error && (<div className="p-3 text-sm text-red-700 bg-red-100 border border-red-300 rounded-lg">{error}</div>)}
-
-          <div className="pt-4">
-            <button type="submit" disabled={loading} className={`w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg text-lg font-semibold text-white transition duration-200 shadow-md ${loading ? 'bg-green-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500'}`}>
-              {loading ? 'Setting Password...' : 'Set Password & Go to Dashboard'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-};
-
-
-// --- 2E. Dashboard Components (From Developer 2's FR-2/FR-3 work) ---
-
-const FarmerDashboard = () => {
-  return (
-    <div className="p-6 bg-green-50">
-      <h1 className="text-3xl font-bold text-green-700 mb-4">Farmer Dashboard</h1>
-      <p className="text-lg text-gray-600">Welcome, Farmer! This is where you will manage your produce (FR-5), view orders, and check payment status.</p>
-      <div className="mt-6 p-4 bg-white rounded-lg shadow-md border-t-4 border-green-500">
-        <h2 className="text-xl font-semibold text-green-600">Produce Management (FR-5 Link)</h2>
-        <p className="text-gray-500">This section will contain the Produce Upload Form and your current inventory list.</p>
-      </div>
-    </div>
-  );
-};
-
-const WholesalerDashboard = () => {
-  return (
-    <div className="p-6 bg-blue-50">
-      <h1 className="text-3xl font-bold text-blue-700 mb-4">Wholesaler Dashboard</h1>
-      <p className="text-lg text-gray-600">Welcome, Wholesaler! This dashboard focuses on viewing available produce, placing bulk orders, and tracking logistics.</p>
-      <div className="mt-6 p-4 bg-white rounded-lg shadow-md border-t-4 border-blue-500">
-        <h2 className="text-xl font-semibold text-blue-600">Marketplace Access</h2>
-        <p className="text-gray-500">You can browse and filter all produce uploads from registered farmers here.</p>
-      </div>
-    </div>
-  );
-};
-
-const TransportDashboard = () => {
-  return (
-    <div className="p-6 bg-yellow-50">
-      <h1 className="text-3xl font-bold text-yellow-700 mb-4">Transport Company Dashboard</h1>
-      <p className="text-lg text-gray-600">Welcome, Transport Company! Your interface is for managing assigned deliveries and confirming successful logistics completion.</p>
-      <div className="mt-6 p-4 bg-white rounded-lg shadow-md border-t-4 border-yellow-500">
-        <h2 className="text-xl font-semibold text-yellow-600">Delivery Management</h2>
-        <p className="text-gray-500">View pickup locations, drop-off points, and shipment manifests.</p>
-      </div>
-    </div>
-  );
-};
-
-const AdminDashboard = () => {
-  return (
-    <div className="p-6 bg-red-50">
-      <h1 className="text-3xl font-bold text-red-700 mb-4">Admin Dashboard</h1>
-      <p className="text-lg text-gray-600">Welcome, Admin! You have centralized control over users, disputes, and system settings.</p>
-      <div className="mt-6 p-4 bg-white rounded-lg shadow-md border-t-4 border-red-500">
-        <h2 className="text-xl font-semibold text-red-600">User Management</h2>
-        <p className="text-gray-500">Ability to modify user roles and approve new registrations.</p>
-      </div>
-    </div>
-  );
-};
-
-const Dashboard = () => {
-  const { user, isLoading, logout } = useAuth();
-  let ActiveDashboard = null;
-
-  if (isLoading || !user || !user.role) {
-    // Should be handled by the router outside, but good defensive coding
-    return null; 
-  }
-
-  // Determine which dashboard to show
-  switch (user.role.toLowerCase()) {
-    case 'farmer':
-      ActiveDashboard = FarmerDashboard;
-      break;
-    case 'wholesaler':
-      ActiveDashboard = WholesalerDashboard;
-      break;
-    case 'transport':
-      ActiveDashboard = TransportDashboard;
-      break;
-    case 'admin':
-      ActiveDashboard = AdminDashboard;
-      break;
-    default:
-      return (
-        <div className="p-6 min-h-screen bg-gray-100">
-          <h1 className="text-2xl font-bold text-red-500">Access Denied</h1>
-          <p className="text-gray-600">Your role ({user.role}) is not recognized by the system.</p>
         </div>
-      );
-  }
-  
-  // Render the header (with logout) and the active dashboard component
-  return (
-    <div className="min-h-screen bg-gray-100">
-        <header className="bg-white shadow-md p-4 flex justify-between items-center sticky top-0 z-10">
-            <div className="text-xl font-semibold text-gray-800">
-                Farmer Connect - {user.role.toUpperCase()} View
-            </div>
-            <div className="flex items-center space-x-4">
-                <span className="text-gray-600 text-sm hidden sm:inline">
-                    Logged in as: <strong className="font-medium">{user.name || user.email}</strong>
-                </span>
-                <button
-                    onClick={logout}
-                    className="flex items-center bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition duration-150 shadow-lg"
-                    aria-label="Logout"
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                    </svg>
-                    Logout
-                </button>
-            </div>
-        </header>
 
-        <main className="p-4">
-            <ActiveDashboard />
-        </main>
-    </div>
+        <div className="card bg-black/60 border border-emerald-500/30 shadow-2xl backdrop-blur-md">
+          <div className="card-body space-y-6">
+            <div>
+              <h2 className="text-xl md:text-2xl font-bold text-white">
+                Set a strong password
+              </h2>
+              <p className="text-sm text-gray-400 mt-1">
+                You’re setting a password for{" "}
+                <span className="font-mono text-emerald-200">{email}</span>.
+              </p>
+            </div>
+
+            {error && (
+              <div className="alert alert-error bg-red-900/40 border-red-500/40 text-sm">
+                <AlertCircle className="w-4 h-4" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            <form onSubmit={onSubmit} className="space-y-4">
+              <div className="space-y-1">
+                <label
+                  htmlFor="password"
+                  className="text-xs font-medium text-gray-200"
+                >
+                  New password
+                </label>
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  required
+                  value={password}
+                  onChange={onChange}
+                  className="input input-bordered w-full bg-black/60 border-white/10 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400 text-sm placeholder:text-gray-500"
+                  placeholder="At least 8 characters"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label
+                  htmlFor="confirmPassword"
+                  className="text-xs font-medium text-gray-200"
+                >
+                  Confirm password
+                </label>
+                <input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type="password"
+                  required
+                  value={confirmPassword}
+                  onChange={onChange}
+                  className="input input-bordered w-full bg-black/60 border-white/10 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400 text-sm placeholder:text-gray-500"
+                  placeholder="Re-type your password"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="btn btn-block rounded-full bg-emerald-500 border-none text-black font-semibold mt-2 hover:bg-emerald-400 disabled:bg-emerald-700 disabled:text-black"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Saving & signing you in…</span>
+                  </>
+                ) : (
+                  "Save password & continue"
+                )}
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </main>
   );
 };
-
 
 // =========================================================================
 // 3. MAIN ROUTER LOGIC (Top Level App Component)
 // =========================================================================
 
 const Router = () => {
-  const { user, isLoading } = useAuth();
-  
-  const [authStage, setAuthStage] = useState({
-    page: window.location.pathname.startsWith('/verify') ? 'VERIFY' : 'LOGIN',
-    email: localStorage.getItem('verificationEmail') || localStorage.getItem('verifiedEmail') || '',
-  });
+  const { user, token, isLoading } = useAuth();
 
-  const path = window.location.pathname;
+  //const path = window.location.pathname;
+
+  // Track current path in React state
+  const [path, setPath] = useState(window.location.pathname);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setPath(window.location.pathname);
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
+  const [authStage, setAuthStage] = useState({
+    page: window.location.pathname.startsWith("/verify") ? "VERIFY" : "LOGIN",
+    email:
+      localStorage.getItem("verificationEmail") ||
+      localStorage.getItem("verifiedEmail") ||
+      "",
+  });
 
   const handleSignupSuccess = (email) => {
     localStorage.setItem('verificationEmail', email);
     setAuthStage({ page: 'VERIFY', email });
     window.history.pushState({}, '', '/verify');
+    setPath("/verify");
   };
 
   const handleVerificationSuccess = (email) => {
     localStorage.setItem('verifiedEmail', email);
     setAuthStage({ page: 'SET_PASSWORD', email });
     window.history.pushState({}, '', '/set-password');
+    setPath("/set-password");
   };
 
 
@@ -820,11 +922,17 @@ const Router = () => {
     );
   }
 
+  // Public landing page for visitors
+  if (!user && !token && path === "/") {
+    return <Home />;
+  }
+
   // --- Protected Routes ---
-  if (user && user.token) {
+  if (user && token) {
     if (path !== '/') {
          // Redirect any old auth paths to the dashboard once logged in
          window.history.pushState({}, '', '/');
+         setPath("/");
     }
     return <Dashboard />;
   }

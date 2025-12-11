@@ -1,169 +1,419 @@
-import React from 'react';
-// IMPORT THE REAL AUTH HOOK: Assuming AuthContext is located at client/src/context/AuthContext.jsx
-// FIX: Added explicit .jsx extension for robust resolution
-import { useAuth } from '../context/AuthContext.jsx'; 
+import React, { useState } from "react";
+import { useAuth } from "../context/AuthContext.jsx";
+import {
+  Leaf,
+  Tractor,
+  Store,
+  Truck,
+  BarChart3,
+  Package,
+  MapPin,
+  CheckCircle2,
+  AlertTriangle,
+  Users,
+  LogOut,
+} from "lucide-react";
+import ProduceForm from "../components/Produce/ProduceForm.jsx";
+import FarmerProduceList from "../components/Produce/FarmerProduceList.jsx";
 
-// --- 1. Role-Specific Dashboard Components ---
+// ---------- Role-specific sections ----------
 
-// Dashboard for Farmers (FR-5 users)
-const FarmerDashboard = () => {
+const FarmerSection = ({ user }) => {
+  const [produceRefreshKey, setProduceRefreshKey] = useState(0);
+
+  const handleProduceUploaded = () => {
+    setProduceRefreshKey((prev) => prev + 1);
+  };
+
   return (
-    <div className="p-6 bg-green-50">
-      <h1 className="text-3xl font-bold text-green-700 mb-4">Farmer Dashboard</h1>
-      <p className="text-lg text-gray-600">
-        Welcome, Farmer! This is where you will manage your produce (FR-5), view orders, and check payment status.
-      </p>
-      <div className="mt-6 p-4 bg-white rounded-lg shadow-md border-t-4 border-green-500">
-        <h2 className="text-xl font-semibold text-green-600">Produce Management (FR-5 Link)</h2>
-        <p className="text-gray-500">
-          This section will contain the Produce Upload Form and your current inventory list.
-        </p>
+    <div className="space-y-6">
+      {/* Row of cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="card bg-black/60 border border-emerald-500/30 shadow-lg">
+          <div className="card-body gap-3">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-semibold text-emerald-300 uppercase tracking-[0.18em]">
+                Harvest summary
+              </p>
+              <Tractor className="w-5 h-5 text-emerald-300" />
+            </div>
+            <p className="text-2xl font-bold text-emerald-200">2.4 t</p>
+            <p className="text-xs text-gray-400">
+              Vegetables & grains ready to list this week.
+            </p>
+          </div>
+        </div>
+
+        <div className="card bg-black/60 border border-emerald-500/30 shadow-lg">
+          <div className="card-body gap-3">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-semibold text-emerald-300 uppercase tracking-[0.18em]">
+                Best offer
+              </p>
+              <BarChart3 className="w-5 h-5 text-emerald-300" />
+            </div>
+            <p className="text-2xl font-bold text-emerald-200">+18%</p>
+            <p className="text-xs text-gray-400">
+              Better than local market in last confirmed deal.
+            </p>
+          </div>
+        </div>
+
+        <div className="card bg-black/60 border border-emerald-500/30 shadow-lg">
+          <div className="card-body gap-3">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-semibold text-emerald-300 uppercase tracking-[0.18em]">
+                Trips booked
+              </p>
+              <Truck className="w-5 h-5 text-emerald-300" />
+            </div>
+            <p className="text-2xl font-bold text-emerald-200">6</p>
+            <p className="text-xs text-gray-400">
+              Confirmed transport trips carrying your produce.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Actions / upcoming section */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* FR-5 form in main area */}
+        <div className="lg:col-span-2">
+          <ProduceForm onUploaded={handleProduceUploaded} />
+          <FarmerProduceList refreshKey={produceRefreshKey} />
+        </div>
+
+
+        <div className="card bg-emerald-900/40 border border-emerald-500/40">
+          <div className="card-body gap-3">
+            <h3 className="text-sm font-semibold text-emerald-100 flex items-center gap-2">
+              <MapPin className="w-4 h-4" />
+              Region overview
+            </h3>
+            <p className="text-xs text-emerald-50/80">
+              See which buyers are active for your district and which transport
+              companies are available on your main routes.
+            </p>
+            <p className="text-[11px] text-emerald-200/80">
+              Later this can show real offers & demand per region.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );
 };
 
-// Dashboard for Wholesalers
-const WholesalerDashboard = () => {
+const WholesalerSection = () => {
   return (
-    <div className="p-6 bg-blue-50">
-      <h1 className="text-3xl font-bold text-blue-700 mb-4">Wholesaler Dashboard</h1>
-      <p className="text-lg text-gray-600">
-        Welcome, Wholesaler! This dashboard focuses on viewing available produce, placing bulk orders, and tracking logistics.
-      </p>
-      <div className="mt-6 p-4 bg-white rounded-lg shadow-md border-t-4 border-blue-500">
-        <h2 className="text-xl font-semibold text-blue-600">Marketplace Access</h2>
-        <p className="text-gray-500">
-          You can browse and filter all produce uploads from registered farmers here.
-        </p>
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="card bg-black/60 border border-emerald-500/30 shadow-lg">
+          <div className="card-body gap-3">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-semibold text-emerald-300 uppercase tracking-[0.18em]">
+                Active listings
+              </p>
+              <Store className="w-5 h-5 text-emerald-300" />
+            </div>
+            <p className="text-2xl font-bold text-emerald-200">34</p>
+            <p className="text-xs text-gray-400">
+              Farmer lots currently visible to your account.
+            </p>
+          </div>
+        </div>
+
+        <div className="card bg-black/60 border border-emerald-500/30 shadow-lg">
+          <div className="card-body gap-3">
+            <p className="text-xs font-semibold text-emerald-300 uppercase tracking-[0.18em]">
+              Confirmed purchases
+            </p>
+            <p className="text-2xl font-bold text-emerald-200">12</p>
+            <p className="text-xs text-gray-400">
+              Deals completed this month through Farmer Connect.
+            </p>
+          </div>
+        </div>
+
+        <div className="card bg-black/60 border border-emerald-500/30 shadow-lg">
+          <div className="card-body gap-3">
+            <p className="text-xs font-semibold text-emerald-300 uppercase tracking-[0.18em]">
+              Quality alerts
+            </p>
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-amber-400" />
+              <span className="text-sm text-amber-200">2 lots flagged</span>
+            </div>
+            <p className="text-xs text-gray-400">
+              Items marked with issues during past inspections.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2 card bg-black/60 border border-white/10">
+          <div className="card-body gap-3">
+            <h3 className="text-sm font-semibold text-emerald-200 flex items-center gap-2">
+              <BarChart3 className="w-4 h-4" />
+              Buying pipeline
+            </h3>
+            <p className="text-xs text-gray-300">
+              Track which farmer offers you have viewed, pending negotiations,
+              and confirmed purchases. This will later link to detailed order
+              views and invoices.
+            </p>
+          </div>
+        </div>
+
+        <div className="card bg-emerald-900/40 border border-emerald-500/40">
+          <div className="card-body gap-3">
+            <h3 className="text-sm font-semibold text-emerald-100 flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4" />
+              Trusted sources
+            </h3>
+            <p className="text-xs text-emerald-50/80">
+              See which farmers are verified and how often they delivered on
+              time and in the expected quality grade.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );
 };
 
-// Dashboard for Transport Companies
-const TransportDashboard = () => {
+const TransportSection = () => {
   return (
-    <div className="p-6 bg-yellow-50">
-      <h1 className="text-3xl font-bold text-yellow-700 mb-4">Transport Company Dashboard</h1>
-      <p className="text-lg text-gray-600">
-        Welcome, Transport Company! Your interface is for managing assigned deliveries and confirming successful logistics completion.
-      </p>
-      <div className="mt-6 p-4 bg-white rounded-lg shadow-md border-t-4 border-yellow-500">
-        <h2 className="text-xl font-semibold text-yellow-600">Delivery Management</h2>
-        <p className="text-gray-500">
-          View pickup locations, drop-off points, and shipment manifests.
-        </p>
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="card bg-black/60 border border-emerald-500/30 shadow-lg">
+          <div className="card-body gap-3">
+            <p className="text-xs font-semibold text-emerald-300 uppercase tracking-[0.18em]">
+              Trips today
+            </p>
+            <p className="text-2xl font-bold text-emerald-200">4</p>
+            <p className="text-xs text-gray-400">
+              Confirmed routes picking up from different farms.
+            </p>
+          </div>
+        </div>
+
+        <div className="card bg-black/60 border border-emerald-500/30 shadow-lg">
+          <div className="card-body gap-3">
+            <p className="text-xs font-semibold text-emerald-300 uppercase tracking-[0.18em]">
+              Capacity in use
+            </p>
+            <p className="text-2xl font-bold text-emerald-200">72%</p>
+            <p className="text-xs text-gray-400">
+              Of available truck volume booked for today.
+            </p>
+          </div>
+        </div>
+
+        <div className="card bg-black/60 border border-emerald-500/30 shadow-lg">
+          <div className="card-body gap-3">
+            <p className="text-xs font-semibold text-emerald-300 uppercase tracking-[0.18em]">
+              Pending pickups
+            </p>
+            <p className="text-2xl font-bold text-emerald-200">3</p>
+            <p className="text-xs text-gray-400">
+              Farms waiting to be assigned to a truck.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2 card bg-black/60 border border-white/10">
+          <div className="card-body gap-3">
+            <h3 className="text-sm font-semibold text-emerald-200 flex items-center gap-2">
+              <Truck className="w-4 h-4" />
+              Route planning
+            </h3>
+            <p className="text-xs text-gray-300">
+              Plan efficient routes that minimize empty returns and match farmer
+              harvest times with buyer delivery windows. Later this will show a
+              list of concrete trips from the database.
+            </p>
+          </div>
+        </div>
+
+        <div className="card bg-emerald-900/40 border border-emerald-500/40">
+          <div className="card-body gap-3">
+            <h3 className="text-sm font-semibold text-emerald-100 flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              Partner network
+            </h3>
+            <p className="text-xs text-emerald-50/80">
+              Keep track of which farmers and buyers you frequently serve and
+              where your vehicles move most often.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );
 };
 
-// Dashboard for Admins (RBAC management)
-const AdminDashboard = () => {
+const AdminSection = () => {
   return (
-    <div className="p-6 bg-red-50">
-      <h1 className="text-3xl font-bold text-red-700 mb-4">Admin Dashboard</h1>
-      <p className="text-lg text-gray-600">
-        Welcome, Admin! You have centralized control over users, disputes, and system settings.
-      </p>
-      <div className="mt-6 p-4 bg-white rounded-lg shadow-md border-t-4 border-red-500">
-        <h2 className="text-xl font-semibold text-red-600">User Management</h2>
-        <p className="text-gray-500">
-          Ability to modify user roles and approve new registrations.
-        </p>
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="card bg-black/60 border border-emerald-500/30 shadow-lg">
+          <div className="card-body gap-3">
+            <p className="text-xs font-semibold text-emerald-300 uppercase tracking-[0.18em]">
+              Farmers
+            </p>
+            <p className="text-2xl font-bold text-emerald-200">120</p>
+            <p className="text-xs text-gray-400">Active farmer accounts.</p>
+          </div>
+        </div>
+        <div className="card bg-black/60 border border-emerald-500/30 shadow-lg">
+          <div className="card-body gap-3">
+            <p className="text-xs font-semibold text-emerald-300 uppercase tracking-[0.18em]">
+              Wholesalers
+            </p>
+            <p className="text-2xl font-bold text-emerald-200">32</p>
+            <p className="text-xs text-gray-400">Verified wholesale buyers.</p>
+          </div>
+        </div>
+        <div className="card bg-black/60 border border-emerald-500/30 shadow-lg">
+          <div className="card-body gap-3">
+            <p className="text-xs font-semibold text-emerald-300 uppercase tracking-[0.18em]">
+              Transporters
+            </p>
+            <p className="text-2xl font-bold text-emerald-200">18</p>
+            <p className="text-xs text-gray-400">
+              Registered transport companies.
+            </p>
+          </div>
+        </div>
+        <div className="card bg-black/60 border border-emerald-500/30 shadow-lg">
+          <div className="card-body gap-3">
+            <p className="text-xs font-semibold text-emerald-300 uppercase tracking-[0.18em]">
+              Issues reported
+            </p>
+            <p className="text-2xl font-bold text-amber-300">5</p>
+            <p className="text-xs text-gray-400">
+              Accounts flagged for manual review.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="card bg-black/60 border border-white/10">
+        <div className="card-body gap-3">
+          <h3 className="text-sm font-semibold text-emerald-200 flex items-center gap-2">
+            <BarChart3 className="w-4 h-4" />
+            Platform health
+          </h3>
+          <p className="text-xs text-gray-300">
+            As an admin you can oversee sign-ups, verification status, and role
+            assignments. This section will later connect directly to your user
+            management tables and system logs.
+          </p>
+        </div>
       </div>
     </div>
   );
 };
 
-
-// --- 2. Authentication Mock/Placeholder (REMOVED) ---
-// We removed the mock and now use the real useAuth hook from above.
-
-
-// --- 3. Main Dashboard Router (FR-2 Implementation with Logout) ---
+// ---------- Main Dashboard wrapper ----------
 
 const Dashboard = () => {
-  // Use the real hook
-  const { user, isLoading, logout } = useAuth();
-  
-  // Component to render based on role
-  let ActiveDashboard = null;
+  const { user, logout } = useAuth();
+  const role = user?.role || "farmer";
 
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-screen bg-gray-50">
-        <h1 className="text-2xl text-gray-500">Loading Dashboard...</h1>
-      </div>
-    );
-  }
+  const getRoleLabel = () => {
+    switch (role) {
+      case "farmer":
+        return "Farmer";
+      case "wholesaler":
+        return "Wholesaler";
+      case "transport":
+        return "Transport Company";
+      case "admin":
+        return "Admin";
+      default:
+        return "User";
+    }
+  };
 
-  // If no user or role is defined, redirect or show unauthorized message
-  if (!user || !user.role) {
-    // Note: In a real app, the AuthProvider/Router should handle the redirect to /login
-    return (
-      <div className="p-6 min-h-screen flex flex-col items-center justify-center text-center bg-gray-100">
-        <p className="text-4xl font-extrabold text-red-600">401</p>
-        <p className="text-xl text-gray-700 mt-2">Unauthorized Access</p>
-        <p className="text-gray-500 mt-1">Please log in to view the dashboard.</p>
-      </div>
-    );
-  }
+  const renderSection = () => {
+    switch (role) {
+      case "farmer":
+        return <FarmerSection />;
+      case "wholesaler":
+        return <WholesalerSection />;
+      case "transport":
+        return <TransportSection />;
+      case "admin":
+        return <AdminSection />;
+      default:
+        return <FarmerSection />;
+    }
+  };
 
-  // Determine which dashboard to show
-  switch (user.role.toLowerCase()) {
-    case 'farmer':
-      ActiveDashboard = FarmerDashboard;
-      break;
-    case 'wholesaler':
-      ActiveDashboard = WholesalerDashboard;
-      break;
-    case 'transport':
-      ActiveDashboard = TransportDashboard;
-      break;
-    case 'admin':
-      ActiveDashboard = AdminDashboard;
-      break;
-    default:
-      return (
-        <div className="p-6 min-h-screen bg-gray-100">
-          <h1 className="text-2xl font-bold text-red-500">Access Denied</h1>
-          <p className="text-gray-600">Your role ({user.role}) is not recognized by the system.</p>
-        </div>
-      );
-  }
-  
-  // Render the header (with logout) and the active dashboard component
   return (
-    <div className="min-h-screen bg-gray-100">
-        {/* Header/Navbar for Logout and User Info */}
-        <header className="bg-white shadow-md p-4 flex justify-between items-center sticky top-0 z-10">
-            <div className="text-xl font-semibold text-gray-800">
-                Farmer Connect - {user.role.toUpperCase()} View
+    <main className="min-h-screen bg-gradient-to-b from-[#02130b] via-[#020a07] to-black text-gray-100">
+      {/* Header */}
+      <header className="border-b border-white/10 bg-black/40 backdrop-blur sticky top-0 z-20">
+        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-emerald-500 to-lime-400 flex items-center justify-center shadow-md shadow-emerald-500/40">
+              <Leaf className="w-4 h-4 text-black" />
             </div>
-            <div className="flex items-center space-x-4">
-                <span className="text-gray-600 text-sm hidden sm:inline">
-                    Logged in as: <strong className="font-medium">{user.name || user.email}</strong>
-                </span>
-                <button
-                    onClick={logout} // Attach the logout function here
-                    className="flex items-center bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition duration-150 shadow-lg"
-                    aria-label="Logout"
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                    </svg>
-                    Logout
-                </button>
+            <div>
+              <p className="text-sm font-semibold text-emerald-200">
+                Farmer Connect
+              </p>
+              <p className="text-[11px] text-emerald-100/70">
+                {getRoleLabel()} dashboard
+              </p>
             </div>
-        </header>
+          </div>
 
-        {/* Dynamic Dashboard Content */}
-        <main className="p-4">
-            <ActiveDashboard />
-        </main>
-    </div>
+          <div className="flex items-center gap-3 text-xs">
+            <div className="text-right">
+              <p className="font-medium text-gray-100">
+                {user?.name || "User"}
+              </p>
+              <p className="text-[11px] text-gray-400">{user?.email}</p>
+            </div>
+            <span className="badge badge-outline border-emerald-400/70 text-emerald-200 text-[11px]">
+              {getRoleLabel()}
+            </span>
+            <button
+              type="button"
+              onClick={logout}
+              className="btn btn-xs rounded-full bg-emerald-500 border-none text-black hover:bg-emerald-400 flex items-center gap-1"
+            >
+              <LogOut className="w-3 h-3" />
+              Logout
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* Body */}
+      <section className="max-w-6xl mx-auto px-4 py-6 space-y-4">
+        <div className="flex items-center justify-between gap-3">
+          <h1 className="text-2xl md:text-3xl font-bold text-white">
+            Good to see you,{" "}
+            <span className="text-emerald-300">
+              {user?.name?.split(" ")[0] || "farmer"}
+            </span>
+            .
+          </h1>
+          <p className="text-xs text-gray-400 hidden sm:block">
+            Prototype dashboard
+          </p>
+        </div>
+
+        {renderSection()}
+      </section>
+    </main>
   );
 };
 

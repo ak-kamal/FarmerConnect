@@ -1,5 +1,6 @@
+//import dotenv from "dotenv";
+//dotenv.config();
 import express from "express";
-import dotenv from "dotenv";
 import mongoose from "mongoose";
 import cors from "cors";
 import path from "path";
@@ -8,7 +9,7 @@ import { fileURLToPath } from "url";
 import authRoutes from "./routes/authRoutes.js";
 import farmerRoutes from "./routes/farmerRoutes.js";
 
-dotenv.config();
+
 
 const app = express();
 

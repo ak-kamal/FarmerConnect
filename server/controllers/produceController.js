@@ -1,32 +1,14 @@
 import Produce from "../models/Produce.js";
-import path from "path";
-import fs from "fs";
 import multer from "multer";
 import { fileURLToPath } from "url";
+import cloudinary from "../config/cloudinary.js";
 
 // If you ever need __dirname in ESM:
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+//const __dirname = path.dirname(__filename);
 
 // 1. Configure storage
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadPath = path.join(process.cwd(), "uploads", "produce");
-
-    if (!fs.existsSync(uploadPath)) {
-      fs.mkdirSync(uploadPath, { recursive: true });
-    }
-
-    cb(null, uploadPath);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(
-      null,
-      file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname)
-    );
-  },
-});
+const storage = multer.memoryStorage();
 
 // 2. Filter file types
 const fileFilter = (req, file, cb) => {
@@ -44,6 +26,18 @@ export const uploadImage = multer({
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
 }).single("image");
 
+const uploadBufferToCloudinary = (buffer, folder = "farmer-connect/produce") =>
+  new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { folder },
+      (error, result) => {
+        if (error) return reject(error);
+        resolve(result);
+      }
+    );
+    stream.end(buffer);
+  });
+
 // 4. Controller
 export const createProduce = async (req, res) => {
   const {
@@ -58,19 +52,23 @@ export const createProduce = async (req, res) => {
   } = req.body;
 
   if (!req.user || req.user.role !== "farmer") {
-    if (req.file) {
-      try {
-        fs.unlinkSync(req.file.path);
-      } catch (err) {
-        console.error("Failed to delete file:", err);
-      }
-    }
-    return res
-      .status(403)
-      .json({ message: "Access Denied. Must be a farmer." });
+    return res.status(403).json({ message: "Access Denied. Must be a farmer." });
   }
+console.log("=== FR-5 CREATE PRODUCE DEBUG ===");
+console.log("req.user:", req.user?._id, req.user?.role);
+console.log("req.body:", req.body);
+console.log("req.file:", req.file ? { mimetype: req.file.mimetype, size: req.file.size, hasBuffer: !!req.file.buffer } : null);
+
 
   try {
+    let imageUrl = null;
+
+    // If farmer uploaded an image, upload it to Cloudinary
+    if (req.file?.buffer) {
+      const uploaded = await uploadBufferToCloudinary(req.file.buffer);
+      imageUrl = uploaded.secure_url; // HTTPS URL
+    }
+
     const newProduce = await Produce.create({
       farmerId: req.user._id,
       produceName,
@@ -81,7 +79,7 @@ export const createProduce = async (req, res) => {
       qualityGrade,
       description,
       harvestDate,
-      images: req.file ? [`/uploads/produce/${req.file.filename}`] : [],
+      images: imageUrl ? [imageUrl] : [],
     });
 
     return res.status(201).json({
@@ -90,15 +88,9 @@ export const createProduce = async (req, res) => {
       data: newProduce,
     });
   } catch (error) {
-    if (req.file) {
-      try {
-        fs.unlinkSync(req.file.path);
-      } catch (err) {
-        console.error("Failed to delete file:", err);
-      }
-    }
+    //console.error("Produce creation error:", error);
+    console.error("Produce creation error FULL:", error);
 
-    console.error("Produce creation error:", error);
 
     let message = "Server error during produce upload.";
     if (error.name === "ValidationError") {

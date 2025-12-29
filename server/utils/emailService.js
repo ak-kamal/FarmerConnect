@@ -1,31 +1,22 @@
-// server/utils/emailService.js
 import nodemailer from "nodemailer";
 
-/**
- * Sends a verification email to the user with a 6-digit OTP.
- * Uses Gmail + App Password for authentication.
- *
- * @param {string} email The recipient's email address.
- * @param {string} code The 6-digit verification code (OTP).
- */
-export const sendVerificationEmail = async (email, code) => {
-  try {
-    // Create transporter using Gmail + App Password
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL_USER, // your Gmail address
-        pass: process.env.EMAIL_PASS, // your Gmail App Password
-      },
-    });
+const makeTransporter = () =>
+  nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
 
-    // Email structure
-    const mailOptions = {
-      from: `"Farmer Connect" <no-reply@farmerconnect.com>`,
-      to: email,
-      subject: "Your Farmer Connect Verification Code",
-      text: `
-Hello,
+export const sendVerificationEmail = async (email, code) => {
+  const transporter = makeTransporter();
+
+  const mailOptions = {
+    from: `"Farmer Connect" <no-reply@farmerconnect.com>`,
+    to: email,
+    subject: "Your Farmer Connect Verification Code",
+    text: `Hello,
 
 Thank you for signing up for Farmer Connect!
 
@@ -34,16 +25,56 @@ Your verification code is: ${code}
 This code is valid for a limited time.
 
 Regards,
-Farmer Connect Team
-      `,
-    };
+Farmer Connect Team`,
+  };
 
-    // Actually send the email
-    await transporter.sendMail(mailOptions);
+  await transporter.sendMail(mailOptions);
+  console.log(`OTP email sent successfully to ${email}`);
+};
 
-    console.log(`OTP email sent successfully to ${email}`);
-  } catch (error) {
-    console.error("Error sending OTP email:", error);
-    throw error;
-  }
+export const sendApprovalEmail = async (email, loginUrl) => {
+  const transporter = makeTransporter();
+
+  const mailOptions = {
+    from: `"Farmer Connect" <no-reply@farmerconnect.com>`,
+    to: email,
+    subject: "Your Farmer Connect Account Has Been Approved",
+    text: `Hello,
+
+Good news! Your Farmer Connect account has been approved by an admin.
+
+You can now log in using your email and the password you set:
+${loginUrl}
+
+Regards,
+Farmer Connect Team`,
+  };
+
+  await transporter.sendMail(mailOptions);
+  console.log(`Approval email sent to ${email}`);
+};
+
+export const sendRejectionEmail = async (email, feedback, homeUrl) => {
+  const transporter = makeTransporter();
+
+  const mailOptions = {
+    from: `"Farmer Connect" <no-reply@farmerconnect.com>`,
+    to: email,
+    subject: "Your Farmer Connect Account Request Was Rejected",
+    text: `Hello,
+
+Your Farmer Connect account request has been rejected due to a discrepancy in the provided information.
+
+Feedback from admin:
+${feedback}
+
+You may start the signup process again from here:
+${homeUrl}
+
+Regards,
+Farmer Connect Team`,
+  };
+
+  await transporter.sendMail(mailOptions);
+  console.log(`Rejection email sent to ${email}`);
 };

@@ -1,21 +1,26 @@
-// client/src/context/AuthContext.jsx
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
 
 const AuthContext = createContext(null);
 
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
-  const [token, setToken] = useState(localStorage.getItem("userToken") || null);
-  const [user, setUser] = useState(
-    JSON.parse(localStorage.getItem("user")) || null
-  );
+  const [token, setToken] = useState(() => localStorage.getItem("userToken"));
+  const [user, setUser] = useState(() => {
+    const raw = localStorage.getItem("user");
+    try {
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  });
+
   const [isLoading, setIsLoading] = useState(true);
 
-  const saveAuthData = (token, userData) => {
-    localStorage.setItem("userToken", token);
+  const saveAuthData = (newToken, userData) => {
+    localStorage.setItem("userToken", newToken);
     localStorage.setItem("user", JSON.stringify(userData));
-    setToken(token);
+    setToken(newToken);
     setUser(userData);
   };
 
@@ -28,10 +33,7 @@ export const AuthProvider = ({ children }) => {
         },
       });
     } catch (error) {
-      console.error(
-        "Logout API call failed, proceeding with local cleanup:",
-        error
-      );
+      console.error("Logout API call failed, proceeding with local cleanup:", error);
     }
 
     localStorage.removeItem("userToken");
@@ -43,27 +45,27 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    if (token || user) {
-      setIsLoading(false);
-    } else {
+    // If one exists but the other doesn't, treat as invalid session
+    if ((token && !user) || (!token && user)) {
       localStorage.removeItem("userToken");
       localStorage.removeItem("user");
       setToken(null);
       setUser(null);
-      setIsLoading(false);
     }
+    setIsLoading(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // run once on mount
 
-  const contextValue = {
-    token,
-    user,
-    isLoading,
-    saveAuthData,
-    logout,
-  };
-
   return (
-    <AuthContext.Provider value={contextValue}>
+    <AuthContext.Provider
+      value={{
+        token,
+        user,
+        isLoading,
+        saveAuthData,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

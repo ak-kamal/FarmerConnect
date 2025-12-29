@@ -18,49 +18,48 @@ const Login = () => {
   };
 
   const onSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
+  e.preventDefault();
+  setLoading(true);
+  setError(null);
 
-    if (!email || !password) {
-      setError('Please enter both email and password.');
-      setLoading(false);
-      return;
-    }
+  if (!email || !password) {
+    setError("Please enter both email and password.");
+    setLoading(false);
+    return;
+  }
 
-    try {
-      const response = await fetch('/api/users/login', { // Uses the route defined in authRoutes.js
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
+  try {
+    const response = await fetch("/api/users/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(formData),
+    });
 
-      const data = await response.json();
-      
-      if (!response.ok) {
-        // Handle server errors (e.g., Invalid credentials, Account not verified)
-        throw new Error(data.message || 'Login failed.');
+    const data = await response.json();
+
+    if (!response.ok) {
+      // ✅ Special handling for admin pending
+      if (data?.code === "ADMIN_PENDING") {
+        window.history.pushState({}, "", "/pending-approval");
+        window.dispatchEvent(new PopStateEvent("popstate"));
+        return;
       }
-
-      // Successful login: Save the token and user data to context/localStorage
-      saveAuthData(data.token, { 
-        id: data._id, 
-        name: data.name, 
-        email: data.email, 
-        role: data.role // Critical for RBAC dashboard
-      });
-
-      // Redirection is typically handled by the global router/AuthContext upon state change
-      
-    } catch (err) {
-      console.error('Login error:', err.message);
-      setError(err.message || 'An unexpected error occurred during login.');
-    } finally {
-      setLoading(false);
+      throw new Error(data.message || "Login failed.");
     }
-  };
+
+    saveAuthData(data.token, {
+      id: data._id,
+      name: data.name,
+      email: data.email,
+      role: data.role,
+    });
+  } catch (err) {
+    console.error("Login error:", err.message);
+    setError(err.message || "An unexpected error occurred during login.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50">

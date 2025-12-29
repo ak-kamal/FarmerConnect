@@ -43,6 +43,26 @@ const userSchema = new mongoose.Schema(
     otpExpires: {
         type: Date,
         select: false,
+    },
+    // Admin verification (separate from OTP verification)
+    adminStatus: {
+      type: String,
+      enum: ["pending", "approved"],
+      default: "pending",
+    },
+    adminReviewedAt: {
+      type: Date,
+    },
+    adminFeedback: {
+      type: String,
+    },
+
+    // NID photos (Cloudinary URLs)
+    nidFrontUrl: {
+      type: String,
+    },
+    nidBackUrl: {
+      type: String,
     }
   },
   {

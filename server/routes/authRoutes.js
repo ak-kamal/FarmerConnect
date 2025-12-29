@@ -8,13 +8,14 @@ import {
   resendOtp,
   logout,
 } from "../controllers/userController.js";
+import { uploadNidImages } from "../middlewares/nidUploadMiddleware.js";
 
 const router = express.Router();
 
 // --- FR-1: Authentication Routes (Public Access) ---
 
 // 1. Initial Registration
-router.post("/signup", signUp);
+router.post("/signup", uploadNidImages, signUp);
 
 // 2. OTP Confirmation
 router.post("/verify", verifyAccount);

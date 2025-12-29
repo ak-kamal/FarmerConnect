@@ -15,6 +15,9 @@ import {
 } from "lucide-react";
 import Dashboard from "./pages/Dashboard.jsx";
 import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
+import PendingApproval from "./pages/PendingApproval.jsx";
+//import Signup from "./pages/Signup.jsx";
+
 
 
 // =========================================================================
@@ -66,6 +69,12 @@ const Login = () => {
       }
 
       if (!response.ok) {
+        // pending approval case
+        if (response.status === 403 && data?.code === "ADMIN_PENDING") {
+          window.history.pushState({}, "", "/pending-approval");
+          window.dispatchEvent(new PopStateEvent("popstate"));
+          return;
+        }
         throw new Error(data.message || "Login failed. Check server status.");
       }
 
@@ -74,6 +83,7 @@ const Login = () => {
         name: data.name,
         email: data.email,
         role: data.role,
+        adminStatus: data.adminStatus,
       });
     } catch (err) {
       console.error("Login error:", err.message);
@@ -211,12 +221,17 @@ const Login = () => {
   );
 };
 
+// Signup (with mandatory NID front/back upload + FormData submit)
 const Signup = ({ onSignupSuccess }) => {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     role: "",
   });
+
+  const [nidFrontFile, setNidFrontFile] = useState(null);
+  const [nidBackFile, setNidBackFile] = useState(null);
+
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(null);
@@ -253,24 +268,36 @@ const Signup = ({ onSignupSuccess }) => {
       return;
     }
 
+    if (!nidFrontFile || !nidBackFile) {
+      setError("NID front and back images are required.");
+      setLoading(false);
+      return;
+    }
+
     try {
+      const form = new FormData();
+      form.append("name", name);
+      form.append("email", email);
+      form.append("role", role);
+      form.append("nidFront", nidFrontFile);
+      form.append("nidBack", nidBackFile);
+
       const response = await fetch("/api/users/signup", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, role }),
+        body: form, // IMPORTANT: don't set Content-Type manually for FormData
       });
 
+      // Robust parsing: avoids "unreadable response" masking real errors
+      const raw = await response.text();
       let data;
       try {
-        data = await response.json();
+        data = JSON.parse(raw);
       } catch {
-        throw new Error("Server returned an unreadable response.");
+        throw new Error(raw || "Server returned an unreadable response.");
       }
 
       if (!response.ok) {
-        throw new Error(
-          data.message || "Registration failed. Please try again."
-        );
+        throw new Error(data.message || "Registration failed. Please try again.");
       }
 
       setSuccess(
@@ -282,7 +309,7 @@ const Signup = ({ onSignupSuccess }) => {
         onSignupSuccess(email);
       }
     } catch (err) {
-      console.error("Signup error:", err.message);
+      console.error("Signup error:", err);
       setError(err.message || "Registration failed. Please try again later.");
     } finally {
       setLoading(false);
@@ -338,12 +365,10 @@ const Signup = ({ onSignupSuccess }) => {
             )}
 
             <form onSubmit={onSubmit} className="space-y-4">
+              {/* Full name */}
               <div className="space-y-1">
-                <label
-                  htmlFor="name"
-                  className="text-xs font-medium text-gray-200"
-                >
-                  Full name
+                <label htmlFor="name" className="text-xs font-medium text-gray-200">
+                  Enter your full name (as appears on your NID)
                 </label>
                 <div className="relative">
                   <span className="absolute inset-y-0 left-3 flex items-center">
@@ -357,16 +382,14 @@ const Signup = ({ onSignupSuccess }) => {
                     value={name}
                     onChange={onChange}
                     className="input input-bordered w-full pl-9 bg-black/60 border-white/10 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400 text-sm placeholder:text-gray-500"
-                    placeholder=""
+                    placeholder="e.g., Rinto Ahmed"
                   />
                 </div>
               </div>
 
+              {/* Email */}
               <div className="space-y-1">
-                <label
-                  htmlFor="email"
-                  className="text-xs font-medium text-gray-200"
-                >
+                <label htmlFor="email" className="text-xs font-medium text-gray-200">
                   Email address
                 </label>
                 <div className="relative">
@@ -418,9 +441,46 @@ const Signup = ({ onSignupSuccess }) => {
                 </div>
               </div>
 
+              {/* NID uploads */}
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-gray-200">
+                  NID Front (clear photo) <span className="text-red-400">*</span>
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  required
+                  onChange={(e) => setNidFrontFile(e.target.files?.[0] || null)}
+                  className="file-input file-input-bordered w-full bg-black/60 border-white/10"
+                />
+                {nidFrontFile && (
+                  <p className="text-[11px] text-emerald-200/80">
+                    Selected: {nidFrontFile.name}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-gray-200">
+                  NID Back (clear photo) <span className="text-red-400">*</span>
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  required
+                  onChange={(e) => setNidBackFile(e.target.files?.[0] || null)}
+                  className="file-input file-input-bordered w-full bg-black/60 border-white/10"
+                />
+                {nidBackFile && (
+                  <p className="text-[11px] text-emerald-200/80">
+                    Selected: {nidBackFile.name}
+                  </p>
+                )}
+              </div>
+
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || !!success}
                 className="btn btn-block rounded-full bg-emerald-500 border-none text-black font-semibold mt-2 hover:bg-emerald-400 disabled:bg-emerald-700 disabled:text-black"
               >
                 {loading ? (
@@ -454,6 +514,7 @@ const Signup = ({ onSignupSuccess }) => {
     </main>
   );
 };
+
 
 // --- 2C. Verification Component ---
 const Verification = ({ verificationEmail, onVerificationSuccess }) => {
@@ -557,11 +618,12 @@ const Verification = ({ verificationEmail, onVerificationSuccess }) => {
     }
 
     try {
-      const response = await fetch("/api/users/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
+      const response = await fetch("/api/users/resend-otp", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+    });
+
 
       let data;
       try {
@@ -691,7 +753,7 @@ const Verification = ({ verificationEmail, onVerificationSuccess }) => {
 };
 
 // --- 2D. Set Password Component ---
-const SetPassword = ({ verifiedEmail }) => {
+const SetPassword = ({ verifiedEmail, onPendingApproval }) => {
   const { saveAuthData } = useAuth();
 
   const email = verifiedEmail || localStorage.getItem("verifiedEmail") || "";
@@ -753,11 +815,20 @@ const SetPassword = ({ verifiedEmail }) => {
         );
       }
 
+      // If server did NOT issue a token, user is pending admin approval
+if (!data?.token) {
+  if (typeof onPendingApproval === "function") onPendingApproval();
+  else window.location.href = "/pending-approval";
+  return;
+}
+
+
       saveAuthData(data.token, {
         id: data._id,
         name: data.name,
         email: data.email,
         role: data.role,
+        adminStatus: data.adminStatus,
       });
 
       localStorage.removeItem("verificationEmail");
@@ -928,14 +999,24 @@ const Router = () => {
   }
 
   // --- Protected Routes ---
-  if (user && token) {
-    if (path !== '/') {
-         // Redirect any old auth paths to the dashboard once logged in
-         window.history.pushState({}, '', '/');
-         setPath("/");
+if (user && token) {
+  // ✅ If not approved (and not an admin), always show PendingApproval
+  if (user.role !== "admin" && user.adminStatus !== "approved") {
+    if (path !== "/pending-approval") {
+      window.history.pushState({}, "", "/pending-approval");
+      setPath("/pending-approval");
     }
-    return <Dashboard />;
+    return <PendingApproval />;
   }
+
+  // ✅ Otherwise go to dashboard
+  if (path !== "/") {
+    window.history.pushState({}, "", "/");
+    setPath("/");
+  }
+  return <Dashboard />;
+}
+
 
   // --- Public Routes (FR-1 Workflow) ---
   
@@ -950,7 +1031,19 @@ const Router = () => {
   
   // 1. Check if user needs to Set Password (is verified)
   if (verifiedEmail && (path === '/set-password' || authStage.page === 'SET_PASSWORD')) {
-      return <SetPassword verifiedEmail={verifiedEmail} />;
+      return (
+  <SetPassword
+    verifiedEmail={verifiedEmail}
+    onPendingApproval={() => {
+      localStorage.removeItem("verifiedEmail");
+      localStorage.removeItem("verificationEmail");
+      setAuthStage({ page: "LOGIN", email: "" });
+      window.history.pushState({}, "", "/pending-approval");
+      setPath("/pending-approval");
+    }}
+  />
+);
+
   }
   
   // 2. Check if user needs Verification (is mid-signup)
@@ -960,8 +1053,11 @@ const Router = () => {
           onVerificationSuccess={handleVerificationSuccess} 
       />;
   }
+  
+  // 3. Pending Approval Page
+  if (path === "/pending-approval") return <PendingApproval />;
 
-  // 3. Default (Login or unknown path)
+  // 4. Default (Login or unknown path)
   if (path === '/' || path === '/login') {
     return <Login />;
   }

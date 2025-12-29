@@ -8,6 +8,7 @@ import { fileURLToPath } from "url";
 
 import authRoutes from "./routes/authRoutes.js";
 import farmerRoutes from "./routes/farmerRoutes.js";
+import adminRoutes from "./routes/adminRoutes.js";
 
 
 
@@ -25,6 +26,7 @@ app.use(express.urlencoded({ extended: true }));
 // API routes
 app.use("/api/users", authRoutes);
 app.use("/api/farmer", farmerRoutes);
+app.use("/api/admin", adminRoutes);
 
 // Serve uploads
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));

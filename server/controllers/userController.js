@@ -4,8 +4,21 @@ import bcrypt from "bcryptjs";
 import asyncHandler from "express-async-handler";
 import User from "../models/User.js";
 import { sendVerificationEmail } from "../utils/emailService.js";
+import cloudinary from "../config/cloudinary.js";
+
 
 // --- Helper Functions ---
+const uploadBufferToCloudinary = (buffer, folder) =>
+  new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { folder },
+      (error, result) => {
+        if (error) return reject(error);
+        resolve(result);
+      }
+    );
+    stream.end(buffer);
+  });
 
 // Generates a 6-digit random code for verification
 const generateVerificationCode = () => {
@@ -25,50 +38,87 @@ const generateToken = (id, role) => {
 // @route   POST /api/users/signup
 // @access  Public
 export const signUp = asyncHandler(async (req, res) => {
-  const { name, email, role } = req.body; // No password yet
+  const { name, email, role } = req.body;
 
-  if (!name || !email) {
+  // Basic validation first (before uploading to Cloudinary)
+  if (!name || !email || !role) {
     res.status(400);
-    throw new Error("Please include a name and email.");
+    throw new Error("Name, email, and role are required.");
   }
+
+  // Prevent normal signup as admin (admins are created by script)
+  if (role === "admin") {
+    res.status(400);
+    throw new Error("Admin accounts cannot be created from signup.");
+  }
+
+  const nidFront = req.files?.nidFront?.[0];
+  const nidBack = req.files?.nidBack?.[0];
+
+  if (!nidFront || !nidBack) {
+    res.status(400);
+    throw new Error("NID front and back images are required.");
+  }
+
+  // Now upload NID images
+  const frontUpload = await uploadBufferToCloudinary(
+    nidFront.buffer,
+    "farmer-connect/nid/front"
+  );
+  const backUpload = await uploadBufferToCloudinary(
+    nidBack.buffer,
+    "farmer-connect/nid/back"
+  );
+
+  const nidFrontUrl = frontUpload.secure_url;
+  const nidBackUrl = backUpload.secure_url;
 
   let user = await User.findOne({ email });
   const verificationCode = generateVerificationCode();
+  const otpExpires = new Date(Date.now() + 5 * 60 * 1000);
 
-  // Set OTP expiration to 5 minutes from now
-  const otpExpires = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
-
+  // If already verified -> block
   if (user && user.isVerified) {
     res.status(409);
     throw new Error("User with this email is already registered and verified.");
   }
 
+  // If exists but not verified -> update OTP + also update NID/name/role
   if (user && !user.isVerified) {
-    // User exists but is unverified, update OTP and resend
+    user.name = name;
+    user.role = role;
+    user.nidFrontUrl = nidFrontUrl;
+    user.nidBackUrl = nidBackUrl;
+    user.adminStatus = "pending";
+
     user.otp = verificationCode;
     user.otpExpires = otpExpires;
+
     await user.save();
   } else {
-    // Create a brand new user document
     user = await User.create({
       name,
       email,
-      role: role,
+      role,
       otp: verificationCode,
-      otpExpires: otpExpires,
+      otpExpires,
       isVerified: false,
+      nidFrontUrl,
+      nidBackUrl,
+      adminStatus: "pending",
     });
   }
 
-  // Send the verification email
   await sendVerificationEmail(email, verificationCode);
 
   res.status(200).json({
-    message: "Registration successful! Check your email for the verification code.",
+    message:
+      "Registration successful! Check your email for the verification code.",
     email: user.email,
-    needsPassword: true, // Signal client to proceed to OTP verification
+    needsPassword: true,
   });
 });
+
 
 // @desc    Verify OTP and mark user as verified
 // @route   POST /api/users/verify
@@ -141,13 +191,24 @@ export const setPassword = asyncHandler(async (req, res) => {
   await user.save();
 
   // Password set successfully, log the user in by generating the final JWT
-  res.status(200).json({
-    _id: user.id,
-    name: user.name,
-    email: user.email,
+  // If admin -> allow token normally
+  if (user.role === "admin") {
+    return res.status(200).json({
+      _id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      adminStatus: user.adminStatus || "approved",
+      token: generateToken(user._id, user.role),
+      message: "Password set and login successful!",
+    });
+  }
+
+  // Non-admin: do not issue token until admin approves
+  return res.status(200).json({
+    message: "Password set successfully. Awaiting admin verification.",
+    adminStatus: user.adminStatus || "pending",
     role: user.role,
-    token: generateToken(user._id, user.role), // <-- Final JWT for session
-    message: "Password set and login successful!",
   });
 });
 
@@ -178,19 +239,41 @@ export const login = asyncHandler(async (req, res) => {
 
   const isMatch = await bcrypt.compare(password, user.password);
 
-  if (user && isMatch) {
-    res.status(200).json({
-      _id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      token: generateToken(user._id, user.role),
-      message: "Login successful!",
-    });
-  } else {
+  if (!isMatch) {
     res.status(401);
     throw new Error("Invalid credentials.");
   }
+
+  // Admin: login immediately
+  if (user.role === "admin") {
+    return res.status(200).json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      adminStatus: user.adminStatus || "approved",
+      token: generateToken(user._id, user.role),
+    });
+  }
+
+  // Non-admin but not approved
+  if (user.adminStatus !== "approved") {
+    return res.status(403).json({
+      message: "Admin verification pending. Kindly wait for approval email.",
+      code: "ADMIN_PENDING",
+    });
+  }
+
+  // Approved non-admin
+  return res.status(200).json({
+    _id: user._id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    adminStatus: user.adminStatus,
+    token: generateToken(user._id, user.role),
+    message: "Login successful!",
+  });
 });
 
 // @desc    Resend the verification OTP

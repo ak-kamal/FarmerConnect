@@ -23,76 +23,66 @@ const SetPassword = ({ verifiedEmail }) => {
   };
 
   const onSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
+  e.preventDefault();
+  setLoading(true);
+  setError(null);
 
-    if (!password || !confirmPassword) {
-      setError('Please enter and confirm your new password.');
-      setLoading(false);
-      return;
-    }
-    
-    if (password !== confirmPassword) {
-      setError('Passwords do not match.');
-      setLoading(false);
-      return;
-    }
-    
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters long.');
-      setLoading(false);
-      return;
-    }
-
-    try {
-      // Call the server endpoint to hash and set the password
-      const response = await fetch('/api/users/set-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.message || 'Password setup failed.');
-      }
-
-      // Successful setup: This route returns the final JWT, so we log the user in
-      saveAuthData(data.token, { 
-        id: data._id, 
-        name: data.name, 
-        email: data.email, 
-        role: data.role // Critical for RBAC dashboard
-      });
-      
-      // Clear persistence items
-      localStorage.removeItem('verificationEmail');
-      localStorage.removeItem('verifiedEmail');
-      
-      // Redirection to the Dashboard is now implicit via the AuthContext state change
-      
-    } catch (err) {
-      console.error('Set Password error:', err.message);
-      setError(err.message || 'An unexpected error occurred during password setup.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (!email) {
-      return (
-          <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50 text-center">
-              <div className="p-8 bg-white rounded-xl shadow-2xl">
-                  <p className="text-xl text-red-500 font-bold">Error: Missing Verification Context</p>
-                  <p className="mt-2 text-gray-600">Please return to the <a href="/signup" className="text-green-600 hover:underline">Sign Up</a> page to restart the verification process.</p>
-              </div>
-          </div>
-      );
+  if (!password || !confirmPassword) {
+    setError("Please enter and confirm your new password.");
+    setLoading(false);
+    return;
   }
+
+  if (password !== confirmPassword) {
+    setError("Passwords do not match.");
+    setLoading(false);
+    return;
+  }
+
+  if (password.length < 8) {
+    setError("Password must be at least 8 characters long.");
+    setLoading(false);
+    return;
+  }
+
+  try {
+    const response = await fetch("/api/users/set-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Password setup failed.");
+    }
+
+    // Always clear OTP stage storage after successful set-password
+    localStorage.removeItem("verificationEmail");
+    localStorage.removeItem("verifiedEmail");
+
+    // If token exists (admin), log in
+    if (data.token) {
+      saveAuthData(data.token, {
+        id: data._id,
+        name: data.name,
+        email: data.email,
+        role: data.role,
+      });
+      return;
+    }
+
+    // Non-admin: go to pending approval page
+    window.history.pushState({}, "", "/pending-approval");
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  } catch (err) {
+    console.error("Set Password error:", err.message);
+    setError(err.message || "An unexpected error occurred during password setup.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50">

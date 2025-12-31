@@ -80,6 +80,7 @@ console.log("req.file:", req.file ? { mimetype: req.file.mimetype, size: req.fil
       description,
       harvestDate,
       images: imageUrl ? [imageUrl] : [],
+      status: "UP_FOR_SALE",
     });
 
     return res.status(201).json({
@@ -125,5 +126,104 @@ export const getMyProduce = async (req, res) => {
     return res
       .status(500)
       .json({ message: "Failed to fetch produce. Please try again later." });
+  }
+};
+
+// Update existing produce (farmer only, image optional)
+export const updateMyProduce = async (req, res) => {
+  if (!req.user || req.user.role !== "farmer") {
+    return res.status(403).json({ message: "Access denied. Farmers only." });
+  }
+
+  try {
+    const item = await Produce.findById(req.params.id);
+    if (!item) return res.status(404).json({ message: "Produce not found." });
+
+    // ensure ownership
+    if (String(item.farmerId) !== String(req.user._id)) {
+      return res.status(403).json({ message: "Not your produce." });
+    }
+
+    // if new image uploaded, upload & replace first image
+    if (req.file?.buffer) {
+      const uploaded = await uploadBufferToCloudinary(req.file.buffer);
+      const imageUrl = uploaded.secure_url;
+      item.images = imageUrl ? [imageUrl] : item.images;
+    }
+
+    // update fields
+    const fields = [
+      "produceName",
+      "category",
+      "quantity",
+      "region",
+      "pricePerUnit",
+      "qualityGrade",
+      "description",
+      "harvestDate",
+      "status",
+    ];
+
+    fields.forEach((k) => {
+      if (req.body[k] !== undefined) item[k] = req.body[k];
+    });
+
+    // ✅ RULE: if quantity becomes 0 => SOLD (always wins)
+    const q = Number(item.quantity);
+    if (!Number.isNaN(q) && q <= 0) {
+      item.quantity = 0;
+      item.status = "SOLD";
+    } else {
+      // if farmer didn't send status, keep existing
+      // if farmer sets UNAVAILABLE/UP_FOR_SALE, allow it
+      if (!item.status) item.status = "UP_FOR_SALE";
+    }
+
+    const saved = await item.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Produce updated successfully.",
+      data: saved,
+    });
+  } catch (error) {
+    console.error("Update produce error:", error);
+    return res.status(500).json({ message: "Failed to update produce." });
+  }
+};
+
+export const deleteMyProduce = async (req, res) => {
+  if (!req.user || req.user.role !== "farmer") {
+    return res
+      .status(403)
+      .json({ message: "Access denied. Only farmers can delete produce." });
+  }
+
+  try {
+    const { id } = req.params;
+
+    const produce = await Produce.findById(id);
+    if (!produce) {
+      return res.status(404).json({ message: "Produce not found." });
+    }
+
+    // ownership check
+    if (String(produce.farmerId) !== String(req.user._id)) {
+      return res
+        .status(403)
+        .json({ message: "Not authorized to delete this produce." });
+    }
+
+    await Produce.deleteOne({ _id: id });
+
+    return res.status(200).json({
+      success: true,
+      message: "Produce deleted successfully.",
+    });
+  } catch (error) {
+    console.error("Error deleting produce:", error);
+    return res
+      .status(500)
+      .json({ message: "Failed to delete produce. Please try again later." });
   }
 };

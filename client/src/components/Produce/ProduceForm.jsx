@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { UploadCloud, Image as ImageIcon, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext.jsx";
@@ -12,12 +12,35 @@ const initialFormState = {
   qualityGrade: "",
   description: "",
   harvestDate: "",
+  status: "UP_FOR_SALE",
 };
 
-const ProduceForm = ({ onUploaded }) => {
+const ProduceForm = ({ onUploaded, mode = "create", initialData = null, onCancel, onUpdated  }) => {
   const { token } = useAuth(); // use the same auth token as the rest of the app
 
   const [formData, setFormData] = useState(initialFormState);
+
+useEffect(() => {
+  if (mode === "edit" && initialData) {
+    setFormData({
+      produceName: initialData.produceName || "",
+      category: initialData.category || "",
+      quantity: initialData.quantity || "",
+      region: initialData.region || "",
+      pricePerUnit: initialData.pricePerUnit || "",
+      qualityGrade: initialData.qualityGrade || "",
+      description: initialData.description || "",
+      harvestDate: initialData.harvestDate
+        ? String(initialData.harvestDate).slice(0, 10)
+        : "",
+      status: initialData.status || "UP_FOR_SALE",
+    });
+    setFileData(null);
+    setError(null);
+    setSuccess(null);
+  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [mode, initialData?._id]);
   const [fileData, setFileData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -40,59 +63,62 @@ const ProduceForm = ({ onUploaded }) => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError(null);
-    setSuccess(null);
+  e.preventDefault();
+  setError(null);
+  setSuccess(null);
 
-    if (!token) {
-      setError("You must be logged in as a farmer to upload produce.");
-      return;
+  if (!token) {
+    setError("You must be logged in as a farmer to upload produce.");
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    const dataToSend = new FormData();
+
+    Object.keys(formData).forEach((key) => {
+      dataToSend.append(key, formData[key]);
+    });
+
+    if (fileData) {
+      dataToSend.append("image", fileData);
     }
 
-    setLoading(true);
+    if (mode === "edit") {
+      if (!initialData?._id) throw new Error("Missing produce id for edit.");
 
-    try {
-      const dataToSend = new FormData();
-
-      // Append text fields
-      Object.keys(formData).forEach((key) => {
-        dataToSend.append(key, formData[key]);
+      await axios.put(`/api/farmer/produce/${initialData._id}`, dataToSend, {
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      // Append image file (must match multer .single("image"))
-      if (fileData) {
-        dataToSend.append("image", fileData);
-      }
-
-      await axios.post("/api/farmer/produce", dataToSend, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          // axios will set the correct multipart boundary for FormData
-        },
-      });
-
-      setSuccess("Produce details uploaded successfully!");
-
-      // Reset form
-      setFormData(initialFormState);
-      setFileData(null);
-      // clear file input visually
-      e.target.reset();
-
-      // Notify parent so it can refresh the list
-      if (typeof onUploaded === "function") {
-        onUploaded();
-        }
-    } catch (err) {
-      console.error("Upload Error:", err);
-      setError(
-        err.response?.data?.message ||
-          "Failed to upload produce. Please try again."
-      );
-    } finally {
-      setLoading(false);
+      setSuccess("Produce updated successfully!");
+      if (typeof onUpdated === "function") onUpdated();
+      return; // ✅ IMPORTANT: stop here
     }
-  };
+
+    // create mode
+    await axios.post("/api/farmer/produce", dataToSend, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    setSuccess("Produce details uploaded successfully!");
+    setFormData(initialFormState);
+    setFileData(null);
+    e.target.reset();
+
+    if (typeof onUploaded === "function") onUploaded();
+  } catch (err) {
+    console.error("Produce submit error:", err);
+    setError(
+      err.response?.data?.message ||
+        err.message ||
+        "Failed to save produce. Please try again."
+    );
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="card bg-black/60 border border-emerald-500/40 shadow-xl backdrop-blur-md">
@@ -101,10 +127,10 @@ const ProduceForm = ({ onUploaded }) => {
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-xs uppercase tracking-[0.18em] text-emerald-300 mb-1">
-              Produce upload
+              {mode === "edit" ? "Edit produce" : "Produce upload"}
             </p>
             <h2 className="text-lg md:text-xl font-semibold text-white">
-              Add a new harvest lot
+              {mode === "edit" ? "Update your produce details" : "Add a new harvest lot"}
             </h2>
             <p className="text-xs text-gray-400 mt-1">
               Share details so buyers and transporters can plan offers and trips.
@@ -251,6 +277,34 @@ const ProduceForm = ({ onUploaded }) => {
                 className="input input-sm md:input-md input-bordered w-full bg-black/60 border-white/10 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400 text-sm"
               />
             </div>
+
+            {/* Status (only in edit mode) */}
+            {mode === "edit" && (
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-gray-200">
+                  Availability status
+                </label>
+
+                <select
+                  name="status"
+                  value={formData.status}
+                  onChange={handleChange}
+                  className="select select-sm md:select-md select-bordered w-full bg-black/60 border-white/10 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400 text-sm"
+                  disabled={Number(formData.quantity) === 0} // ✅ optional (prevents changing if sold)
+                >
+                  <option value="UP_FOR_SALE">Up for sale</option>
+                  <option value="UNAVAILABLE">Unavailable</option>
+                  <option value="SOLD">Sold</option>
+                </select>
+
+                {Number(formData.quantity) === 0 && (
+                  <p className="text-[11px] text-gray-500">
+                    Quantity is 0 → status stays Sold automatically.
+                  </p>
+                )}
+              </div>
+            )}
+
           </div>
 
           {/* Description */}
@@ -267,7 +321,21 @@ const ProduceForm = ({ onUploaded }) => {
               className="textarea textarea-bordered w-full bg-black/60 border-white/10 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400 text-sm placeholder:text-gray-500"
               placeholder="Short notes on size, freshness, packaging, preferred pickup time…"
             />
+
           </div>
+
+          {mode === "edit" && initialData?.images?.[0] && (
+  <div className="rounded-2xl border border-white/10 overflow-hidden bg-black/40">
+    <div className="px-3 py-2 border-b border-white/10">
+      <p className="text-xs text-gray-300">Current image</p>
+    </div>
+    <img
+      src={initialData.images[0]}
+      alt="Current produce"
+      className="w-full h-48 object-cover"
+    />
+  </div>
+)}
 
           {/* Image upload */}
           <div className="space-y-2">
@@ -289,25 +357,41 @@ const ProduceForm = ({ onUploaded }) => {
           </div>
 
           {/* Submit */}
-          <div className="pt-2">
-            <button
-              type="submit"
-              disabled={loading}
-              className="btn btn-sm md:btn-md rounded-full bg-emerald-500 border-none text-black font-semibold hover:bg-emerald-400 disabled:bg-emerald-700 disabled:text-black flex items-center gap-2"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Uploading…</span>
-                </>
-              ) : (
-                <>
-                  <UploadCloud className="w-4 h-4" />
-                  <span>Upload produce details</span>
-                </>
-              )}
-            </button>
-          </div>
+          <div className="pt-2 flex items-center gap-2">
+  {mode === "edit" && (
+    <button
+      type="button"
+      onClick={onCancel}
+      className="btn btn-sm md:btn-md rounded-full bg-black/40 border border-white/10 hover:bg-white/5"
+      disabled={loading}
+    >
+      Cancel
+    </button>
+  )}
+
+  <button
+    type="submit"
+    disabled={loading}
+    className="btn btn-sm md:btn-md rounded-full bg-emerald-500 border-none text-black font-semibold hover:bg-emerald-400 disabled:bg-emerald-700 disabled:text-black flex items-center gap-2"
+  >
+    {loading ? (
+      <>
+        <Loader2 className="w-4 h-4 animate-spin" />
+        <span>{mode === "edit" ? "Saving…" : "Uploading…"}</span>
+      </>
+    ) : (
+      <>
+        {mode === "edit" ? (
+          <CheckCircle2 className="w-4 h-4" />
+        ) : (
+          <UploadCloud className="w-4 h-4" />
+        )}
+        <span>{mode === "edit" ? "Confirm changes" : "Upload produce details"}</span>
+      </>
+    )}
+  </button>
+</div>
+
         </form>
       </div>
     </div>

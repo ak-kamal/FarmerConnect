@@ -52,7 +52,7 @@ const useOutsideClose = (isOpen, onClose) => {
 // ------------------------------------------------------------
 // Role-specific "middle" sections (your existing content)
 // ------------------------------------------------------------
-const FarmerSection = ({ activeView }) => {
+const FarmerSection = ({ activeView, onEdit }) => {
   const [produceRefreshKey, setProduceRefreshKey] = useState(0);
 
   const handleProduceUploaded = () => {
@@ -120,7 +120,9 @@ const FarmerSection = ({ activeView }) => {
           {showUpload && (
             <>
               <ProduceForm onUploaded={handleProduceUploaded} />
-              <FarmerProduceList refreshKey={produceRefreshKey} />
+              <FarmerProduceList
+                refreshKey={produceRefreshKey} 
+                onEdit={onEdit}/>
             </>
           )}
 
@@ -129,7 +131,9 @@ const FarmerSection = ({ activeView }) => {
               <h2 className="text-lg font-semibold text-white">
                 Your uploaded produce
               </h2>
-              <FarmerProduceList refreshKey={produceRefreshKey} />
+              <FarmerProduceList 
+                refreshKey={produceRefreshKey}
+                onEdit={onEdit} />
             </div>
           )}
 
@@ -394,6 +398,25 @@ const Dashboard = () => {
   const { user, logout } = useAuth();
   const role = user?.role || "farmer";
 
+  const [editingProduce, setEditingProduce] = useState(null);
+const [produceRefreshKey, setProduceRefreshKey] = useState(0);
+
+const startEdit = (item) => {
+  setEditingProduce(item);
+  setActiveView("FARMER_EDIT");
+};
+
+const cancelEdit = () => {
+  setEditingProduce(null);
+  setActiveView("FARMER_LIST");
+};
+
+const afterUpdated = () => {
+  setEditingProduce(null);
+  setActiveView("FARMER_LIST");
+  setProduceRefreshKey((k) => k + 1);
+};
+
   // IMPORTANT: set correct defaults (Farmer should NOT start at upload)
   const defaultView = useMemo(() => {
     if (role === "admin") return "ADMIN_VERIFY_USERS";
@@ -481,6 +504,38 @@ const Dashboard = () => {
   // Middle content switching logic
   const renderMiddle = () => {
     if (role === "farmer") {
+      if (activeView === "FARMER_UPLOAD") {
+    return (
+      <>
+        <ProduceForm onUploaded={() => setProduceRefreshKey((k) => k + 1)} />
+        <FarmerProduceList
+          refreshKey={produceRefreshKey}
+          onEdit={startEdit}
+        />
+      </>
+    );
+  }
+
+  if (activeView === "FARMER_LIST") {
+    return (
+      <FarmerProduceList
+        refreshKey={produceRefreshKey}
+        onEdit={startEdit}
+        defaultExpanded={true}
+      />
+    );
+  }
+
+  if (activeView === "FARMER_EDIT") {
+    return (
+      <ProduceForm
+        mode="edit"
+        initialData={editingProduce}
+        onCancel={cancelEdit}
+        onUpdated={afterUpdated}
+      />
+    );
+  }
       if (activeView === "FARMER_MARKET") {
         return (
           <PlaceholderPanel
@@ -492,7 +547,7 @@ const Dashboard = () => {
       }
 
       // Overview / Upload / List are handled inside FarmerSection now
-      return <FarmerSection activeView={activeView} />;
+      return <FarmerSection activeView={activeView} onEdit={startEdit} />;
     }
 
     if (role === "wholesaler") {
@@ -517,7 +572,7 @@ const Dashboard = () => {
       return <AdminSection />;
     }
 
-    return <FarmerSection activeView={activeView} />;
+    return <FarmerSection activeView={activeView} onEdit={startEdit} />;
   };
 
   const firstName = user?.name?.split(" ")?.[0] || "User";
@@ -938,7 +993,7 @@ const AdminVerifyUsersPanel = () => {
                       Provide rejection feedback (required)
                     </p>
                     <textarea
-                      className="textarea textarea-bordered w-full bg-black/60 border-white/10 focus:border-amber-400 focus:outline-none text-sm"
+                      className="textarea w-full bg-black/60 border-white/10 focus:border-amber-400 focus:outline-none text-sm"
                       rows={3}
                       value={feedback}
                       onChange={(e) => setFeedback(e.target.value)}

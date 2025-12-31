@@ -7,6 +7,11 @@ const produceSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    status: {
+      type: String,
+      enum: ["UP_FOR_SALE", "SOLD", "UNAVAILABLE"],
+      default: "UP_FOR_SALE",
+    },
     produceName: {
       type: String,
       required: [true, "Please enter the name of the produce: "],

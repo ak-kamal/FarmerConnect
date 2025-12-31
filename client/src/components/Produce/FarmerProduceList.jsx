@@ -7,6 +7,8 @@ import {
   Leaf,
   Loader2,
   AlertCircle,
+  Pencil,
+  Trash2
 } from "lucide-react";
 
 const formatDateTime = (isoString) => {
@@ -28,12 +30,50 @@ const formatDateTime = (isoString) => {
   return `${datePart} • ${timePart}`;
 };
 
-const FarmerProduceList = ({ refreshKey }) => {
+const statusLabel = (s) => {
+  if (s === "SOLD") return "Sold";
+  if (s === "UNAVAILABLE") return "Unavailable";
+  return "Up for sale";
+};
+
+const FarmerProduceList = ({ refreshKey, onEdit, defaultExpanded = false }) => {
+  const [expanded, setExpanded] = useState(defaultExpanded);
+
+  useEffect(() => {
+    setExpanded(defaultExpanded);
+  }, [defaultExpanded]);
+
   const { token } = useAuth();
-  const [expanded, setExpanded] = useState(false);
+  //const [expanded, setExpanded] = useState(false);
   const [loading, setLoading] = useState(false);
   const [produce, setProduce] = useState([]);
   const [error, setError] = useState(null);
+
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
+  const deleteProduce = async (id) => {
+  if (!token) return;
+
+  try {
+    setDeleteLoading(true);
+    await axios.delete(`/api/farmer/produce/${id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    setConfirmDeleteId(null);
+    // refresh list immediately
+    await fetchProduce();
+  } catch (err) {
+    console.error("Delete produce error:", err);
+    alert(
+      err.response?.data?.message ||
+        "Failed to delete produce. Please try again."
+    );
+  } finally {
+    setDeleteLoading(false);
+  }
+};
 
   const fetchProduce = async () => {
     if (!token) {
@@ -74,23 +114,26 @@ const FarmerProduceList = ({ refreshKey }) => {
 
   return (
     <div className="mt-4">
-      <button
-        type="button"
-        onClick={toggleExpanded}
-        className="btn btn-sm md:btn-md rounded-full bg-emerald-500/20 border border-emerald-400 text-emerald-100 hover:bg-emerald-500/40 flex items-center gap-2"
-      >
-        {expanded ? (
-          <>
-            <ChevronUp className="w-4 h-4" />
-            <span>Hide my uploaded produce</span>
-          </>
-        ) : (
-          <>
-            <ChevronDown className="w-4 h-4" />
-            <span>Show my uploaded produce</span>
-          </>
-        )}
-      </button>
+      {!defaultExpanded && (
+  <button
+    type="button"
+    onClick={toggleExpanded}
+    className="btn btn-sm md:btn-md rounded-full bg-emerald-500/20 border border-emerald-400 text-emerald-100 hover:bg-emerald-500/40 flex items-center gap-2"
+  >
+    {expanded ? (
+      <>
+        <ChevronUp className="w-4 h-4" />
+        <span>Hide my uploaded produce</span>
+      </>
+    ) : (
+      <>
+        <ChevronDown className="w-4 h-4" />
+        <span>Show my uploaded produce</span>
+      </>
+    )}
+  </button>
+)}
+
 
       {expanded && (
         <div className="mt-4 card bg-black/60 border border-white/10 shadow-lg">
@@ -146,24 +189,66 @@ const FarmerProduceList = ({ refreshKey }) => {
                         />
                       </figure>
                     )}
+
+                    {/* CARD BODY */}
                     <div className="card-body p-3 space-y-1">
                       <div className="flex justify-between items-center gap-2">
                         <h4 className="text-sm font-semibold text-white truncate">
                           {item.produceName}
                         </h4>
-                        <span className="badge badge-sm bg-emerald-500/20 border border-emerald-400 text-[10px] text-emerald-200">
-                          Grade {item.qualityGrade}
-                        </span>
+
+                        <div className="flex items-center gap-2">
+                          <span className="badge badge-sm bg-emerald-500/20 border border-emerald-400 text-[10px] text-emerald-200">
+                            Grade {item.qualityGrade}
+                          </span>
+
+                          <span
+                            className={`badge badge-sm text-[10px]
+                              ${
+                                item.status === "SOLD"
+                                  ? "bg-red-500/15 border border-red-400 text-red-200"
+                                  : item.status === "UNAVAILABLE"
+                                  ? "bg-amber-500/15 border border-amber-400 text-amber-200"
+                                  : "bg-emerald-500/15 border border-emerald-400 text-emerald-200"
+                              }`}
+                          >
+                            {statusLabel(item.status)}
+                          </span>
+
+                          {/* EDIT */}
+                          <button
+                            type="button"
+                            onClick={() => onEdit?.(item)}
+                            className="btn btn-xs rounded-full bg-black/40 border border-white/10 hover:bg-white/5"
+                            title="Edit produce"
+                          >
+                            <Pencil className="w-3 h-3 text-emerald-200" />
+                          </button>
+
+                          {/* DELETE */}
+                          <button
+                            type="button"
+                            onClick={() => setConfirmDeleteId(item._id)}
+                            className="btn btn-xs rounded-full bg-black/40 border border-white/10 hover:bg-red-500/15"
+                            title="Delete produce"
+                          >
+                            <Trash2 className="w-3 h-3 text-red-400" />
+                          </button>
+                        </div>
                       </div>
+
                       <p className="text-[11px] text-gray-400">
                         {item.category} • {item.region}
                       </p>
+
                       <p className="text-[11px] text-gray-300">
                         {item.quantity} kg • {item.pricePerUnit} ৳/kg
                       </p>
+
                       <p className="text-[11px] text-gray-400 line-clamp-2">
                         {item.description}
                       </p>
+
                       <div className="flex flex-col gap-0.5 mt-1">
                         <p className="text-[11px] text-gray-500">
                           Harvest:{" "}
@@ -179,8 +264,38 @@ const FarmerProduceList = ({ refreshKey }) => {
                         </p>
                       </div>
                     </div>
+
+                    {/* CONFIRM DELETE BOX */}
+                    {confirmDeleteId === item._id && (
+                      <div className="mx-3 mb-3 rounded-2xl border border-red-500/30 bg-red-500/10 p-3 space-y-2">
+                        <p className="text-xs text-red-100">
+                          Are you sure you want to permanently delete this produce?
+                        </p>
+
+                        <div className="flex justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setConfirmDeleteId(null)}
+                            className="btn btn-xs rounded-full bg-black/40 border border-white/10 hover:bg-white/5"
+                            disabled={deleteLoading}
+                          >
+                            No
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => deleteProduce(item._id)}
+                            className="btn btn-xs rounded-full bg-red-500 border-none text-black hover:bg-red-400"
+                            disabled={deleteLoading}
+                          >
+                            {deleteLoading ? "Deleting…" : "Yes"}
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
+
               </div>
             )}
           </div>

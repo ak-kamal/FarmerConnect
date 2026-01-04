@@ -107,6 +107,11 @@ export const signUp = asyncHandler(async (req, res) => {
       nidBackUrl,
       adminStatus: "pending",
     });
+
+    if (user.role === "farmer" && !user.farmerCode) {
+      user.farmerCode = `FARM-${String(user._id).slice(-6).toUpperCase()}`;
+      await user.save();
+    }
   }
 
   await sendVerificationEmail(email, verificationCode);

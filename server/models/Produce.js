@@ -11,10 +11,15 @@ const produceSchema = new mongoose.Schema(
       type: String,
       enum: ["UP_FOR_SALE", "SOLD", "UNAVAILABLE"],
       default: "UP_FOR_SALE",
+      index: true,
     },
     produceName: {
       type: String,
       required: [true, "Please enter the name of the produce: "],
+    },
+    produceNameNormalized: {
+      type: String,
+      index: true,
     },
     category: {
       type: String,

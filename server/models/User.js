@@ -8,6 +8,12 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Please add a name'],
     },
+    farmerCode: {
+      type: String,
+      unique: true,
+      sparse: true, // ✅ allows non-farmers to have null
+      index: true,
+    },
     email: {
       type: String,
       required: [true, 'Please add an email'],

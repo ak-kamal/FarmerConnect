@@ -63,7 +63,21 @@ const userSchema = new mongoose.Schema(
     },
     nidBackUrl: {
       type: String,
-    }
+    },
+    farmerStats: {
+      totalQuantitySold: {
+        type: Number,
+        default: 0,
+      },
+      totalSalesCount: {
+        type: Number,
+        default: 0,
+      },
+      totalEarnings: {
+        type: Number,
+        default: 0,
+      },
+    },
   },
   {
     timestamps: true, // Automatically adds createdAt and updatedAt fields

@@ -26,6 +26,7 @@ import {
 
 import ProduceForm from "../components/Produce/ProduceForm.jsx";
 import FarmerProduceList from "../components/Produce/FarmerProduceList.jsx";
+import FarmerRankingSection from "../components/Farmer/FarmerRankingSection.jsx";
 
 // ------------------------------------------------------------
 // Small helper: close dropdown when clicking outside
@@ -64,6 +65,7 @@ const FarmerSection = ({ activeView, onEdit }) => {
 
   return (
     <div className="space-y-6">
+      <FarmerRankingSection />
       {/* Row of cards (always visible) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="card bg-black/60 border border-emerald-500/30 shadow-lg">

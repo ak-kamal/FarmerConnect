@@ -16,4 +16,9 @@ router.put("/produce/:id", protect, uploadImage, updateMyProduce);
 // delete produce
 router.delete("/produce/:id", protect, deleteMyProduce);
 
+// farmer rankings
+import { getMyFarmerRanking } from "../controllers/farmerRankingController.js";
+
+router.get("/rankings/me", protect, getMyFarmerRanking);
+
 export default router;

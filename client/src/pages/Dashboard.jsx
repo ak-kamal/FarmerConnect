@@ -27,6 +27,7 @@ import {
 import ProduceForm from "../components/Produce/ProduceForm.jsx";
 import FarmerProduceList from "../components/Produce/FarmerProduceList.jsx";
 import FarmerRankingSection from "../components/Farmer/FarmerRankingSection.jsx";
+import WholesalerSearchProduce from "../components/Wholesaler/WholesalerSearchProduce.jsx";
 
 // ------------------------------------------------------------
 // Small helper: close dropdown when clicking outside
@@ -473,7 +474,7 @@ const afterUpdated = () => {
     if (role === "wholesaler") {
       return [
         { id: "ROLE_HOME", label: "Dashboard overview", icon: BarChart3 },
-        { id: "WHOLE_SEARCH", label: "Search produce (soon)", icon: Search },
+        { id: "WHOLE_SEARCH", label: "Search produce", icon: Search },
         { id: "WHOLE_TOP", label: "Top farmers (soon)", icon: Users },
         { id: "WHOLE_PAY", label: "Payments (soon)", icon: BadgeDollarSign },
         { id: "WHOLE_TRANSPORT", label: "Find transport (soon)", icon: Truck },
@@ -553,6 +554,7 @@ const afterUpdated = () => {
     }
 
     if (role === "wholesaler") {
+      if (activeView === "WHOLE_SEARCH") return <WholesalerSearchProduce />;
       return <WholesalerSection />;
     }
 
@@ -747,6 +749,11 @@ const afterUpdated = () => {
             Good to see you,{" "}
             <span className="text-emerald-300">{firstName}</span>.
           </h1>
+          {role === "farmer" && user?.farmerCode && (
+            <p className="text-xs text-emerald-200/80">
+              Farmer ID: <span className="text-emerald-300 font-semibold">{user.farmerCode}</span>
+            </p>
+          )}
           <p className="text-xs text-gray-400 hidden sm:block">
             Prototype dashboard
           </p>

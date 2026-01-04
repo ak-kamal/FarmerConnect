@@ -9,6 +9,7 @@ import { fileURLToPath } from "url";
 import authRoutes from "./routes/authRoutes.js";
 import farmerRoutes from "./routes/farmerRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
+import wholesalerRoutes from "./routes/wholesalerRoutes.js";
 
 
 
@@ -27,6 +28,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/api/users", authRoutes);
 app.use("/api/farmer", farmerRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/wholesaler", wholesalerRoutes);
 
 // Serve uploads
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));

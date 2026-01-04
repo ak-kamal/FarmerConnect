@@ -71,7 +71,8 @@ console.log("req.file:", req.file ? { mimetype: req.file.mimetype, size: req.fil
 
     const newProduce = await Produce.create({
       farmerId: req.user._id,
-      produceName,
+      produceName: produceName?.trim(),
+      produceNameNormalized: produceName?.trim().toLowerCase(),
       category,
       quantity,
       region,
@@ -144,14 +145,19 @@ export const updateMyProduce = async (req, res) => {
       return res.status(403).json({ message: "Not your produce." });
     }
 
-    // if new image uploaded, upload & replace first image
+    /* --------------------------------------------------
+       IMAGE UPDATE
+    -------------------------------------------------- */
     if (req.file?.buffer) {
       const uploaded = await uploadBufferToCloudinary(req.file.buffer);
-      const imageUrl = uploaded.secure_url;
-      item.images = imageUrl ? [imageUrl] : item.images;
+      if (uploaded?.secure_url) {
+        item.images = [uploaded.secure_url];
+      }
     }
 
-    // update fields
+    /* --------------------------------------------------
+       FIELD UPDATES
+    -------------------------------------------------- */
     const fields = [
       "produceName",
       "category",
@@ -165,18 +171,42 @@ export const updateMyProduce = async (req, res) => {
     ];
 
     fields.forEach((k) => {
-      if (req.body[k] !== undefined) item[k] = req.body[k];
+      if (req.body[k] !== undefined) {
+        item[k] = req.body[k];
+      }
     });
 
-    // ✅ RULE: if quantity becomes 0 => SOLD (always wins)
-    const q = Number(item.quantity);
-    if (!Number.isNaN(q) && q <= 0) {
+    /* --------------------------------------------------
+       NORMALIZE PRODUCE NAME (IMPORTANT)
+    -------------------------------------------------- */
+    if (req.body.produceName) {
+      item.produceName = req.body.produceName.trim();
+      item.produceNameNormalized = req.body.produceName
+        .trim()
+        .toLowerCase();
+    }
+
+    /* --------------------------------------------------
+       STATUS RULES (ORDER MATTERS)
+    -------------------------------------------------- */
+
+    const quantityNum = Number(item.quantity);
+
+    // RULE 1: quantity 0 or below → SOLD (always wins)
+    if (!Number.isNaN(quantityNum) && quantityNum <= 0) {
       item.quantity = 0;
       item.status = "SOLD";
     } else {
-      // if farmer didn't send status, keep existing
-      // if farmer sets UNAVAILABLE/UP_FOR_SALE, allow it
-      if (!item.status) item.status = "UP_FOR_SALE";
+      // RULE 2: quantity > 0
+      // allow farmer to explicitly set status
+      if (req.body.status) {
+        item.status = req.body.status; // UP_FOR_SALE / UNAVAILABLE
+      }
+
+      // fallback safety
+      if (!item.status) {
+        item.status = "UP_FOR_SALE";
+      }
     }
 
     const saved = await item.save();

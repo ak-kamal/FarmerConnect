@@ -6,6 +6,11 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 const BDT_TO_USD = 122;
 
+const generateOrderCode = () => {
+  const suffix = Date.now().toString().slice(-6);
+  return `FC-ORD-${new Date().getFullYear()}-${suffix}`;
+};
+
 export const createCheckoutSession = async (req, res) => {
   try {
     const { produceId, quantity } = req.body;
@@ -32,7 +37,10 @@ export const createCheckoutSession = async (req, res) => {
     const totalUSD = Number((totalBDT / BDT_TO_USD).toFixed(2));
 
     // 3️⃣ Create Order (PENDING)
+    const orderCode = await generateOrderCode();
+
     const order = await Order.create({
+      orderCode,
       produceId: produce._id,
       farmerId: produce.farmerId,
       wholesalerId: req.user._id,

@@ -12,6 +12,7 @@ import adminRoutes from "./routes/adminRoutes.js";
 import wholesalerRoutes from "./routes/wholesalerRoutes.js";
 import webhookRoutes from "./routes/webhookRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
+import wholesalerOrderRoutes from "./routes/wholesalerOrderRoutes.js";
 
 const app = express();
 
@@ -33,6 +34,7 @@ app.use("/api/farmer", farmerRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/wholesaler", wholesalerRoutes);
 app.use("/api/orders", orderRoutes);
+app.use("/api/wholesaler", wholesalerOrderRoutes);
 
 // Middleware
 app.use(express.urlencoded({ extended: true }));

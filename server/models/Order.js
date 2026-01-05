@@ -46,6 +46,11 @@ const orderSchema = new mongoose.Schema(
       enum: ["PENDING", "PAID"],
       default: "PENDING",
     },
+    deliveryStatus: {
+  type: String,
+  enum: ["AWAITING_DELIVERY", "IN_TRANSIT", "DELIVERED"],
+  default: "AWAITING_DELIVERY",
+},
 
     stripeSessionId: String,
   },

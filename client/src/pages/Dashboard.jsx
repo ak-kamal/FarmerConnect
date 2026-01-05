@@ -29,6 +29,7 @@ import FarmerProduceList from "../components/Produce/FarmerProduceList.jsx";
 import FarmerRankingSection from "../components/Farmer/FarmerRankingSection.jsx";
 import WholesalerSearchProduce from "../components/Wholesaler/WholesalerSearchProduce.jsx";
 import WholesalerTopFarmers from "../components/Wholesaler/WholesalerTopFarmers.jsx";
+import WholesalerMyOrders from "../components/Wholesaler/WholesalerMyOrders.jsx";
 
 // ------------------------------------------------------------
 // Small helper: close dropdown when clicking outside
@@ -434,6 +435,14 @@ const afterUpdated = () => {
 
   useEffect(() => {
   const params = new URLSearchParams(window.location.search);
+
+  const view = params.get("view");
+  if (view) {
+    setActiveView(view);
+    params.delete("view");
+    window.history.replaceState({}, "", "/");
+  }
+
   if (params.get("payment") === "success") {
     alert("✅ Payment completed successfully!");
     params.delete("payment");
@@ -488,6 +497,7 @@ const afterUpdated = () => {
         { id: "ROLE_HOME", label: "Dashboard overview", icon: BarChart3 },
         { id: "WHOLE_SEARCH", label: "Search produce", icon: Search },
         { id: "WHOLE_TOP", label: "Top farmers", icon: Users },
+        { id: "WHOLE_ORDERS", label: "My orders", icon: Package },
         { id: "WHOLE_PAY", label: "Payments (soon)", icon: BadgeDollarSign },
         { id: "WHOLE_TRANSPORT", label: "Find transport (soon)", icon: Truck },
       ];
@@ -584,6 +594,10 @@ const afterUpdated = () => {
 
     if (activeView === "WHOLE_TOP") {
       return <WholesalerTopFarmers />;
+    }
+
+    if (activeView === "WHOLE_ORDERS") {
+      return <WholesalerMyOrders />;
     }
 
     // dashboard overview (ROLE_HOME or default)

@@ -402,7 +402,9 @@ const Dashboard = () => {
   const role = user?.role || "farmer";
 
   const [editingProduce, setEditingProduce] = useState(null);
-const [produceRefreshKey, setProduceRefreshKey] = useState(0);
+  const [produceRefreshKey, setProduceRefreshKey] = useState(0);
+
+  const [showPaymentSuccess, setShowPaymentSuccess] = useState(false);
 
 const startEdit = (item) => {
   setEditingProduce(item);
@@ -428,6 +430,15 @@ const afterUpdated = () => {
   }, [role]);
 
   const [activeView, setActiveView] = useState(defaultView);
+
+  useEffect(() => {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("payment") === "success") {
+    alert("✅ Payment completed successfully!");
+    params.delete("payment");
+    window.history.replaceState({}, "", "/");
+  }
+}, []);
 
   useEffect(() => {
     setActiveView(defaultView);

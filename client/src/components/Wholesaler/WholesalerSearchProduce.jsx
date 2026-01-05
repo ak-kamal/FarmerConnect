@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext.jsx";
+import WholesalerProduceCard from "./WholesalerProduceCard.jsx";
 import {
   Search,
   User,
@@ -312,75 +313,16 @@ const WholesalerSearchProduce = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {results.map((item) => (
-                <div key={item._id} className="card bg-black/70 border border-white/10">
-                  {item.images?.[0] && (
-                    <figure className="h-32 overflow-hidden rounded-t-2xl">
-                      <img
-                        src={item.images[0]}
-                        alt={item.produceName}
-                        className="w-full h-full object-cover"
-                      />
-                    </figure>
-                  )}
+  <WholesalerProduceCard key={item._id} item={item} />
+))}
 
-                  <div className="card-body p-3 space-y-1">
-                    <div className="flex justify-between items-start gap-2">
-                      <div className="min-w-0">
-                        <h4 className="text-sm font-semibold text-white truncate">
-                          {item.produceName}
-                        </h4>
-                        <p className="text-[11px] text-gray-400">
-                          {item.category} • {item.region}
-                        </p>
-                      </div>
 
-                      <span className="badge badge-sm bg-emerald-500/20 border border-emerald-400 text-[10px] text-emerald-200">
-                        Grade {item.qualityGrade}
-                      </span>
-                    </div>
-
-                    <p className="text-[11px] text-gray-300">
-                      {item.quantity} kg • {item.pricePerUnit} ৳/kg
-                    </p>
-
-                    <p className="text-[11px] text-gray-400 line-clamp-2">
-                      {item.description}
-                    </p>
-
-                    <div className="flex items-center justify-between pt-2">
-                      <p className="text-[11px] text-gray-500">
-                        Harvest: <span className="text-gray-300">{formatDate(item.harvestDate)}</span>
-                      </p>
-
-                      <button
-                        type="button"
-                        onClick={() => alert("Approach to buy feature will be added next.")}
-                        className="btn btn-xs rounded-full bg-emerald-500 border-none text-black hover:bg-emerald-400"
-                      >
-                        Approach to buy
-                      </button>
-                    </div>
-
-                    {/* Farmer info */}
-                    {item.farmerId && (
-                      <p className="text-[11px] text-gray-500 pt-1">
-                        Farmer:{" "}
-                        <span className="text-gray-200">
-                          {item.farmerId.name}
-                        </span>{" "}
-                        <span className="text-emerald-200/80">
-                          ({item.farmerId.farmerCode || "NO-CODE"})
-                        </span>
-                      </p>
-                    )}
+                    
                   </div>
-                </div>
-              ))}
+              )}
             </div>
-          )}
         </div>
       </div>
-    </div>
   );
 };
 

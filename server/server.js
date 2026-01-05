@@ -10,8 +10,8 @@ import authRoutes from "./routes/authRoutes.js";
 import farmerRoutes from "./routes/farmerRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import wholesalerRoutes from "./routes/wholesalerRoutes.js";
-
-
+import webhookRoutes from "./routes/webhookRoutes.js";
+import orderRoutes from "./routes/orderRoutes.js";
 
 const app = express();
 
@@ -19,16 +19,23 @@ const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Middleware
 app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
 // API routes
+app.use(
+  "/api/webhooks",
+  express.raw({ type: "application/json" }), webhookRoutes
+);
+
+app.use(express.json());
+
 app.use("/api/users", authRoutes);
 app.use("/api/farmer", farmerRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/wholesaler", wholesalerRoutes);
+app.use("/api/orders", orderRoutes);
+
+// Middleware
+app.use(express.urlencoded({ extended: true }));
 
 // Serve uploads
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));

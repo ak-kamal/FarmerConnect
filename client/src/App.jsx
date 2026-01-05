@@ -16,6 +16,7 @@ import {
 import Dashboard from "./pages/Dashboard.jsx";
 import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
 import PendingApproval from "./pages/PendingApproval.jsx";
+import PaymentSuccess from "./components/Wholesaler/PaymentSuccess";
 //import Signup from "./pages/Signup.jsx";
 
 
@@ -1000,6 +1001,10 @@ const Router = () => {
 
   // --- Protected Routes ---
 if (user && token) {
+  // ✅ Stripe payment success page
+  if (path === "/wholesaler/payment-success") {
+    return <PaymentSuccess />;
+  }
   // ✅ If not approved (and not an admin), always show PendingApproval
   if (user.role !== "admin" && user.adminStatus !== "approved") {
     if (path !== "/pending-approval") {

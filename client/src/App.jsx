@@ -17,6 +17,22 @@ import Dashboard from "./pages/Dashboard.jsx";
 import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
 import PendingApproval from "./pages/PendingApproval.jsx";
 import PaymentSuccess from "./components/Wholesaler/PaymentSuccess";
+
+const BD_DISTRICTS = [
+  "Bagerhat","Bandarban","Barguna","Barishal","Bhola","Bogura",
+  "Brahmanbaria","Chandpur","Chattogram","Chuadanga","CoxsBazar",
+  "Cumilla","Dhaka","Dinajpur","Faridpur","Feni","Gaibandha",
+  "Gazipur","Gopalganj","Habiganj","Jamalpur","Jashore",
+  "Jhalokathi","Jhenaidah","Joypurhat","Khagrachhari","Khulna",
+  "Kishoreganj","Kurigram","Kushtia","Lakshmipur","Lalmonirhat",
+  "Madaripur","Magura","Manikganj","Meherpur","Moulvibazar",
+  "Munshiganj","Mymensingh","Naogaon","Narail","Narayanganj",
+  "Narsingdi","Natore","Netrokona","Nilphamari","Noakhali",
+  "Pabna","Panchagarh","Patuakhali","Pirojpur","Rajbari",
+  "Rajshahi","Rangamati","Rangpur","Satkhira","Shariatpur",
+  "Sherpur","Sirajganj","Sunamganj","Sylhet","Tangail","Thakurgaon"
+];
+
 //import Signup from "./pages/Signup.jsx";
 
 
@@ -228,6 +244,7 @@ const Signup = ({ onSignupSuccess }) => {
     name: "",
     email: "",
     role: "",
+    district: "",
   });
 
   const [nidFrontFile, setNidFrontFile] = useState(null);
@@ -237,7 +254,7 @@ const Signup = ({ onSignupSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(null);
 
-  const { name, email, role } = formData;
+  const { name, email, role, district } = formData;
 
   const onChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -282,6 +299,7 @@ const Signup = ({ onSignupSuccess }) => {
       form.append("role", role);
       form.append("nidFront", nidFrontFile);
       form.append("nidBack", nidBackFile);
+      form.append("district", district);
 
       const response = await fetch("/api/users/signup", {
         method: "POST",
@@ -441,6 +459,27 @@ const Signup = ({ onSignupSuccess }) => {
                   ))}
                 </div>
               </div>
+
+              {/* District selection */}
+<div className="space-y-1">
+  <label className="text-xs font-medium text-gray-200">
+    Select your district <span className="text-red-400">*</span>
+  </label>
+  <select
+    name="district"
+    required
+    value={formData.district}
+    onChange={onChange}
+    className="select select-bordered w-full bg-black/60 border-white/10"
+  >
+    <option value="">-- Select district --</option>
+    {BD_DISTRICTS.map((d) => (
+      <option key={d} value={d}>
+        {d}
+      </option>
+    ))}
+  </select>
+</div>
 
               {/* NID uploads */}
               <div className="space-y-2">

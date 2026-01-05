@@ -70,6 +70,17 @@ const userSchema = new mongoose.Schema(
     nidBackUrl: {
       type: String,
     },
+    location: {
+  district: {
+    type: String,
+    required: true,
+  },
+  division: {
+    type: String,
+    required: true,
+  },
+},
+
     farmerStats: {
       totalQuantitySold: {
         type: Number,

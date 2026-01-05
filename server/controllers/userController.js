@@ -5,7 +5,7 @@ import asyncHandler from "express-async-handler";
 import User from "../models/User.js";
 import { sendVerificationEmail } from "../utils/emailService.js";
 import cloudinary from "../config/cloudinary.js";
-
+import { DISTRICT_TO_DIVISION } from "../utils/districtToDivision.js";
 
 // --- Helper Functions ---
 const uploadBufferToCloudinary = (buffer, folder) =>
@@ -38,13 +38,25 @@ const generateToken = (id, role) => {
 // @route   POST /api/users/signup
 // @access  Public
 export const signUp = asyncHandler(async (req, res) => {
-  const { name, email, role } = req.body;
+  const { name, email, role, district } = req.body;
 
   // Basic validation first (before uploading to Cloudinary)
   if (!name || !email || !role) {
     res.status(400);
     throw new Error("Name, email, and role are required.");
   }
+
+  if (!district) {
+  res.status(400);
+  throw new Error("District selection is required.");
+}
+
+const division = DISTRICT_TO_DIVISION[district];
+if (!division) {
+  res.status(400);
+  throw new Error("Invalid district selected.");
+}
+
 
   // Prevent normal signup as admin (admins are created by script)
   if (role === "admin") {
@@ -90,6 +102,7 @@ export const signUp = asyncHandler(async (req, res) => {
     user.nidFrontUrl = nidFrontUrl;
     user.nidBackUrl = nidBackUrl;
     user.adminStatus = "pending";
+    user.location = { district, division };
 
     user.otp = verificationCode;
     user.otpExpires = otpExpires;
@@ -100,6 +113,10 @@ export const signUp = asyncHandler(async (req, res) => {
       name,
       email,
       role,
+      location: {
+  district,
+  division,
+},
       otp: verificationCode,
       otpExpires,
       isVerified: false,

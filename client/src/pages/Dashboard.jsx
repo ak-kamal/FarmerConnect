@@ -30,6 +30,7 @@ import FarmerRankingSection from "../components/Farmer/FarmerRankingSection.jsx"
 import WholesalerSearchProduce from "../components/Wholesaler/WholesalerSearchProduce.jsx";
 import WholesalerTopFarmers from "../components/Wholesaler/WholesalerTopFarmers.jsx";
 import WholesalerMyOrders from "../components/Wholesaler/WholesalerMyOrders.jsx";
+import ContactTransport from "../components/Wholesaler/ContactTransport.jsx";
 
 // ------------------------------------------------------------
 // Small helper: close dropdown when clicking outside
@@ -499,7 +500,7 @@ const afterUpdated = () => {
         { id: "WHOLE_TOP", label: "Top farmers", icon: Users },
         { id: "WHOLE_ORDERS", label: "My orders", icon: Package },
         { id: "WHOLE_PAY", label: "Payments (soon)", icon: BadgeDollarSign },
-        { id: "WHOLE_TRANSPORT", label: "Find transport (soon)", icon: Truck },
+        { id: "WHOLE_TRANSPORT", label: "Find transport", icon: Truck },
       ];
     }
 
@@ -598,6 +599,10 @@ const afterUpdated = () => {
 
     if (activeView === "WHOLE_ORDERS") {
       return <WholesalerMyOrders />;
+    }
+
+    if (activeView === "WHOLE_TRANSPORT") {
+    return <ContactTransport />;
     }
 
     // dashboard overview (ROLE_HOME or default)

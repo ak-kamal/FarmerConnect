@@ -91,7 +91,7 @@ const WholesalerMyOrders = () => {
           My orders
         </h2>
         <p className="text-xs text-gray-400">
-          Showing all paid orders awaiting delivery.
+          Showing all paid orders
         </p>
       </div>
 
@@ -110,6 +110,10 @@ const WholesalerMyOrders = () => {
         <p className="text-xs text-gray-400">
           Farmer: {order.produceId?.farmerId?.name || "Unknown"}
         </p>
+        <p className="text-xs text-emerald-300 font-mono">
+      Order ID: {order.orderCode}
+    </p>
+
       </div>
 
       <span className="badge badge-outline border-amber-400 text-amber-300 text-[11px]">

@@ -59,8 +59,8 @@ export const createCheckoutSession = async (req, res) => {
           quantity: 1,
         },
       ],
-      success_url: `${CLIENT_URL}/?payment=success`,
-      cancel_url: `${CLIENT_URL}/`,
+      success_url: `${process.env.CLIENT_URL}/wholesaler/payment-success`,
+      cancel_url: `${process.env.CLIENT_URL}/`,
       metadata: {
         orderId: order._id.toString(),
       },

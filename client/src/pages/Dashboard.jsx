@@ -28,6 +28,7 @@ import ProduceForm from "../components/Produce/ProduceForm.jsx";
 import FarmerProduceList from "../components/Produce/FarmerProduceList.jsx";
 import FarmerRankingSection from "../components/Farmer/FarmerRankingSection.jsx";
 import WholesalerSearchProduce from "../components/Wholesaler/WholesalerSearchProduce.jsx";
+import WholesalerTopFarmers from "../components/Wholesaler/WholesalerTopFarmers.jsx";
 
 // ------------------------------------------------------------
 // Small helper: close dropdown when clicking outside
@@ -486,7 +487,7 @@ const afterUpdated = () => {
       return [
         { id: "ROLE_HOME", label: "Dashboard overview", icon: BarChart3 },
         { id: "WHOLE_SEARCH", label: "Search produce", icon: Search },
-        { id: "WHOLE_TOP", label: "Top farmers (soon)", icon: Users },
+        { id: "WHOLE_TOP", label: "Top farmers", icon: Users },
         { id: "WHOLE_PAY", label: "Payments (soon)", icon: BadgeDollarSign },
         { id: "WHOLE_TRANSPORT", label: "Find transport (soon)", icon: Truck },
       ];
@@ -517,78 +518,110 @@ const afterUpdated = () => {
 
   // Middle content switching logic
   const renderMiddle = () => {
-    if (role === "farmer") {
-      if (activeView === "FARMER_UPLOAD") {
-    return (
-      <>
-        <ProduceForm onUploaded={() => setProduceRefreshKey((k) => k + 1)} />
+  /* =========================
+     FARMER
+  ========================= */
+  if (role === "farmer") {
+    if (activeView === "FARMER_UPLOAD") {
+      return (
+        <>
+          <ProduceForm onUploaded={() => setProduceRefreshKey((k) => k + 1)} />
+          <FarmerProduceList
+            refreshKey={produceRefreshKey}
+            onEdit={startEdit}
+          />
+        </>
+      );
+    }
+
+    if (activeView === "FARMER_LIST") {
+      return (
         <FarmerProduceList
           refreshKey={produceRefreshKey}
           onEdit={startEdit}
+          defaultExpanded={true}
         />
-      </>
-    );
-  }
+      );
+    }
 
-  if (activeView === "FARMER_LIST") {
+    if (activeView === "FARMER_EDIT") {
+      return (
+        <ProduceForm
+          mode="edit"
+          initialData={editingProduce}
+          onCancel={cancelEdit}
+          onUpdated={afterUpdated}
+        />
+      );
+    }
+
+    if (activeView === "FARMER_MARKET") {
+      return (
+        <PlaceholderPanel
+          title="Market price"
+          icon={BadgeDollarSign}
+          desc="Later we’ll connect this to a real data source so farmers can check live market prices by crop/region."
+        />
+      );
+    }
+
+    // default farmer view
     return (
-      <FarmerProduceList
-        refreshKey={produceRefreshKey}
+      <FarmerSection
+        activeView={activeView}
         onEdit={startEdit}
-        defaultExpanded={true}
       />
     );
   }
 
-  if (activeView === "FARMER_EDIT") {
-    return (
-      <ProduceForm
-        mode="edit"
-        initialData={editingProduce}
-        onCancel={cancelEdit}
-        onUpdated={afterUpdated}
-      />
-    );
+  /* =========================
+     WHOLESALER
+  ========================= */
+  if (role === "wholesaler") {
+    if (activeView === "WHOLE_SEARCH") {
+      return <WholesalerSearchProduce />;
+    }
+
+    if (activeView === "WHOLE_TOP") {
+      return <WholesalerTopFarmers />;
+    }
+
+    // dashboard overview (ROLE_HOME or default)
+    return <WholesalerSection />;
   }
-      if (activeView === "FARMER_MARKET") {
-        return (
-          <PlaceholderPanel
-            title="Market price"
-            icon={BadgeDollarSign}
-            desc="Later we’ll connect this to a real data source so farmers can check live market prices by crop/region."
-          />
-        );
-      }
 
-      // Overview / Upload / List are handled inside FarmerSection now
-      return <FarmerSection activeView={activeView} onEdit={startEdit} />;
+  /* =========================
+     ADMIN
+  ========================= */
+  if (role === "admin") {
+    if (activeView === "ADMIN_VERIFY_USERS") {
+      return <AdminVerifyUsersPanel />;
     }
 
-    if (role === "wholesaler") {
-      if (activeView === "WHOLE_SEARCH") return <WholesalerSearchProduce />;
-      return <WholesalerSection />;
+    if (activeView === "ADMIN_COMPLAINTS") {
+      return (
+        <PlaceholderPanel
+          title="Complaints"
+          icon={MessageSquareWarning}
+          desc="Placeholder. Later we’ll add complaints reporting and admin review tools."
+        />
+      );
     }
 
-    if (role === "transport") {
-      return <TransportSection />;
-    }
+    return <AdminSection />;
+  }
 
-    if (role === "admin") {
-      if (activeView === "ADMIN_VERIFY_USERS") return <AdminVerifyUsersPanel />;
-      if (activeView === "ADMIN_COMPLAINTS") {
-        return (
-          <PlaceholderPanel
-            title="Complaints"
-            icon={MessageSquareWarning}
-            desc="Placeholder. Later we’ll add complaints reporting and admin review tools."
-          />
-        );
-      }
-      return <AdminSection />;
-    }
+  /* =========================
+     FALLBACK (safety)
+  ========================= */
+  return (
+    <FarmerSection
+      activeView={activeView}
+      onEdit={startEdit}
+    />
+  );
+};
 
-    return <FarmerSection activeView={activeView} onEdit={startEdit} />;
-  };
 
   const firstName = user?.name?.split(" ")?.[0] || "User";
   const profileUrl = user?.profileImageUrl || "";

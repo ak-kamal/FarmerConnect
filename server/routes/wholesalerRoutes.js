@@ -6,6 +6,7 @@ import {
   farmerSuggestions,
   searchByFarmer,
 } from "../controllers/wholesalerSearchController.js";
+import { getTopFarmers } from "../controllers/wholesalerFarmersController.js";
 
 const router = express.Router();
 
@@ -14,5 +15,7 @@ router.get("/produce-options", protect, getProduceNameOptions);
 router.get("/search/produce", protect, searchByProduceName);
 router.get("/search/farmers", protect, farmerSuggestions);
 router.get("/search/farmer-produce", protect, searchByFarmer);
+//router.get("/farmers", protect, roleCheck("wholesaler"), listFarmersForWholesaler);
+router.get("/top-farmers", protect, getTopFarmers);
 
 export default router;

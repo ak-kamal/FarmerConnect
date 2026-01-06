@@ -22,6 +22,7 @@ import {
   BadgeDollarSign,
   ClipboardCheck,
   MessageSquareWarning,
+  CreditCard, 
 } from "lucide-react";
 
 import ProduceForm from "../components/Produce/ProduceForm.jsx";
@@ -31,6 +32,9 @@ import WholesalerSearchProduce from "../components/Wholesaler/WholesalerSearchPr
 import WholesalerTopFarmers from "../components/Wholesaler/WholesalerTopFarmers.jsx";
 import WholesalerMyOrders from "../components/Wholesaler/WholesalerMyOrders.jsx";
 import ContactTransport from "../components/Wholesaler/ContactTransport.jsx";
+import TransportViewOffers from "../components/Transport/TransportViewOffers.jsx";
+import TransportCurrentDeliveries from "../components/Transport/TransportCurrentDeliveries.jsx";
+import WholesalerTransportPayments from "../components/Wholesaler/WholesalerTransportPayments.jsx";
 
 // ------------------------------------------------------------
 // Small helper: close dropdown when clicking outside
@@ -489,7 +493,6 @@ const afterUpdated = () => {
         { id: "FARMER_OVERVIEW", label: "Dashboard overview", icon: BarChart3 },
         { id: "FARMER_UPLOAD", label: "Upload new produce", icon: Package },
         { id: "FARMER_LIST", label: "View uploaded produce", icon: ClipboardCheck },
-        { id: "FARMER_MARKET", label: "Market price (soon)", icon: BadgeDollarSign },
       ];
     }
 
@@ -499,23 +502,27 @@ const afterUpdated = () => {
         { id: "WHOLE_SEARCH", label: "Search produce", icon: Search },
         { id: "WHOLE_TOP", label: "Top farmers", icon: Users },
         { id: "WHOLE_ORDERS", label: "My orders", icon: Package },
-        { id: "WHOLE_PAY", label: "Payments (soon)", icon: BadgeDollarSign },
+      
         { id: "WHOLE_TRANSPORT", label: "Find transport", icon: Truck },
+        {
+  id: "WHOLE_TRANSPORT_PAYMENT",
+  label: "Make payment for transport",
+  icon: CreditCard,
+}
       ];
     }
 
     if (role === "transport") {
-      return [
-        { id: "ROLE_HOME", label: "Dashboard overview", icon: BarChart3 },
-        { id: "TRANS_ORDERS", label: "Orders awaiting delivery (soon)", icon: Truck },
-        { id: "TRANS_ROUTES", label: "Route planning (soon)", icon: MapPin },
-      ];
-    }
+  return [
+    { id: "ROLE_HOME", label: "Dashboard overview", icon: BarChart3 },
+    { id: "TRANS_OFFERS", label: "View offers", icon: Truck },
+    { id: "TRANS_DELIVERIES", label: "View current deliveries", icon: Package },
+  ];
+}
 
     if (role === "admin") {
       return [
         { id: "ADMIN_VERIFY_USERS", label: "Verify users", icon: ShieldAdminIcon },
-        { id: "ADMIN_COMPLAINTS", label: "View complaints (soon)", icon: MessageSquareWarning },
       ];
     }
 
@@ -601,6 +608,11 @@ const afterUpdated = () => {
       return <WholesalerMyOrders />;
     }
 
+    if (activeView === "WHOLE_TRANSPORT_PAYMENT") {
+  return <WholesalerTransportPayments />;
+}
+
+
     if (activeView === "WHOLE_TRANSPORT") {
     return <ContactTransport />;
     }
@@ -608,6 +620,18 @@ const afterUpdated = () => {
     // dashboard overview (ROLE_HOME or default)
     return <WholesalerSection />;
   }
+
+  if (role === "transport") {
+  if (activeView === "TRANS_OFFERS") {
+    return <TransportViewOffers />;
+  }
+
+  if (activeView === "TRANS_DELIVERIES") {
+    return <TransportCurrentDeliveries />;
+  }
+
+  return <TransportSection />;
+}
 
   /* =========================
      ADMIN

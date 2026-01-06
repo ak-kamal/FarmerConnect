@@ -23,6 +23,9 @@ const ContactTransport = () => {
   const [orderCode, setOrderCode] = useState("");
   const [fee, setFee] = useState(null);
 
+  /* =========================
+     FETCH TRANSPORT COMPANIES
+  ========================= */
   useEffect(() => {
     const fetchTransports = async () => {
       try {
@@ -32,8 +35,7 @@ const ContactTransport = () => {
           },
         });
 
-        const raw = await res.text();
-        const data = JSON.parse(raw);
+        const data = await res.json();
 
         if (!res.ok) {
           throw new Error(data.message || "Failed to load transports");
@@ -49,6 +51,39 @@ const ContactTransport = () => {
 
     fetchTransports();
   }, [token]);
+
+  /* =========================
+     SUBMIT TRANSPORT REQUEST
+  ========================= */
+  const submitRequest = async () => {
+    try {
+      const res = await fetch("/api/transport/request", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          orderCode: orderCode.trim(),
+          transportId: selectedTransport._id,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to send transport request");
+      }
+
+      alert("✅ Transport request sent");
+
+      setSelectedTransport(null);
+      setOrderCode("");
+      setFee(null);
+    } catch (err) {
+      alert(err.message);
+    }
+  };
 
   /* =========================
      UI STATES
@@ -90,13 +125,11 @@ const ContactTransport = () => {
   ========================= */
   return (
     <div className="space-y-4">
-      {/* Title */}
       <h2 className="text-lg font-semibold text-white flex items-center gap-2">
         <Truck className="w-5 h-5 text-emerald-300" />
         Find transport
       </h2>
 
-      {/* Cards grid — SAME SIZE AS PRODUCE CARDS */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl">
         {transports.map((t) => {
           const showForm = selectedTransport?._id === t._id;
@@ -108,18 +141,11 @@ const ContactTransport = () => {
             >
               <div className="card-body p-4 space-y-2">
                 <div>
-                  <p className="text-sm font-semibold text-white">
-                    {t.name}
-                  </p>
-
+                  <p className="text-sm font-semibold text-white">{t.name}</p>
                   <p className="text-xs text-gray-400">
                     District: {t.location?.district || "Unknown"}
                   </p>
-
-                  <p className="text-xs text-gray-400">
-                    Email: {t.email}
-                  </p>
-
+                  <p className="text-xs text-gray-400">Email: {t.email}</p>
                   <p className="text-xs">
                     Rating:{" "}
                     <span className="text-emerald-300">
@@ -132,15 +158,15 @@ const ContactTransport = () => {
 
                 {!showForm && (
                   <div className="flex justify-end pt-3">
-  <button
-    className="btn btn-sm md:btn-md rounded-full bg-emerald-500 text-black hover:bg-emerald-400"
-                        onClick={() => {
+                    <button
+                      className="btn btn-sm md:btn-md rounded-full bg-emerald-500 text-black hover:bg-emerald-400"
+                      onClick={() => {
                         setSelectedTransport(t);
                         setOrderCode("");
                         setFee(null);
-                        }}
+                      }}
                     >
-                        Approach for transport
+                      Approach for transport
                     </button>
                   </div>
                 )}
@@ -149,7 +175,7 @@ const ContactTransport = () => {
                   <div className="space-y-2 border-t border-white/10 pt-3">
                     <input
                       type="text"
-                      placeholder="Enter Order ID (e.g. FC-ORD-2026-00012)"
+                      placeholder="Enter Order ID (e.g. FC-ORD-2026-000123)"
                       value={orderCode}
                       onChange={(e) => setOrderCode(e.target.value)}
                       className="input input-bordered w-full bg-black/60 border-white/10"
@@ -171,12 +197,13 @@ const ContactTransport = () => {
                     )}
 
                     <div className="flex justify-end pt-3">
-                    <button
-                      disabled={!orderCode}
-                      className="btn btn-sm md:btn-md rounded-full bg-emerald-500 text-black hover:bg-emerald-400"
-                    >
-                      Submit request
-                    </button>
+                      <button
+                        disabled={!orderCode}
+                        onClick={submitRequest}
+                        className="btn btn-sm md:btn-md rounded-full bg-emerald-500 text-black hover:bg-emerald-400"
+                      >
+                        Submit request
+                      </button>
                     </div>
                   </div>
                 )}

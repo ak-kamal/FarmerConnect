@@ -59,10 +59,31 @@ const orderSchema = new mongoose.Schema(
     },
 
     deliveryStatus: {
-      type: String,
-      enum: ["AWAITING_DELIVERY", "IN_TRANSIT", "DELIVERED"],
-      default: "AWAITING_DELIVERY",
-    },
+  type: String,
+  enum: [
+    "AWAITING_DELIVERY",
+    "READY_TO_BE_PICKED",
+    "ON_THE_WAY",
+    "REACHED",
+  ],
+  default: "AWAITING_DELIVERY",
+},
+
+transportFeeBDT: {
+  type: Number,
+},
+
+transportPaymentStatus: {
+  type: String,
+  enum: ["UNPAID", "PAID"],
+  default: "UNPAID",
+},
+
+transportId: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "User",
+},
+
 
     stripeSessionId: String,
   },

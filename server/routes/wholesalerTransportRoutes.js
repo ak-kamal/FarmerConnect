@@ -1,13 +1,14 @@
 import express from "express";
-import { protect } from "../middlewares/authMiddleware.js";
+import { protect, restrictTo } from "../middlewares/authMiddleware.js";
 import { getAllTransportCompanies } from "../controllers/wholesalerTransportController.js";
 
 const router = express.Router();
 
-// Wholesaler-only
+// Wholesaler: view transport companies
 router.get(
   "/",
   protect,
+  restrictTo("wholesaler"),
   getAllTransportCompanies
 );
 

@@ -1,9 +1,63 @@
 import express from "express";
-import { protect } from "../middlewares/authMiddleware.js";
-import { previewTransportFee } from "../controllers/transportRequestController.js";
+import { protect, restrictTo } from "../middlewares/authMiddleware.js";
+import {
+  previewTransportFee,
+  sendTransportRequest,
+  getMyTransportOffers,
+  acceptTransportOffer,
+  getCurrentDeliveries,
+  updateDeliveryStatus,
+} from "../controllers/transportRequestController.js";
 
 const router = express.Router();
 
-router.post("/preview-fee", protect, previewTransportFee);
+/* =========================
+   WHOLESALER ROUTES
+========================= */
+router.post(
+  "/preview-fee",
+  protect,
+  restrictTo("wholesaler"),
+  previewTransportFee
+);
+
+router.post(
+  "/request",
+  protect,
+  restrictTo("wholesaler"),
+  sendTransportRequest
+);
+
+/* =========================
+   TRANSPORT ROUTES
+========================= */
+router.get(
+  "/offers",
+  protect,
+  restrictTo("transport"),
+  getMyTransportOffers
+);
+
+router.post(
+  "/accept/:id",
+  protect,
+  restrictTo("transport"),
+  acceptTransportOffer
+);
+
+router.get(
+  "/current-deliveries",
+  protect,
+  restrictTo("transport"),
+  getCurrentDeliveries
+);
+
+router.post(
+  "/update-delivery/:id",
+  protect,
+  restrictTo("transport"),
+  updateDeliveryStatus
+);
+
 
 export default router;

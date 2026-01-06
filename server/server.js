@@ -38,7 +38,7 @@ app.use("/api/wholesaler", wholesalerRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/wholesaler", wholesalerOrderRoutes);
 app.use("/api/wholesaler/transports", wholesalerTransportRoutes);
-app.use("/api/transport-requests", transportRequestRoutes);
+app.use("/api/transport", transportRequestRoutes);
 
 // Middleware
 app.use(express.urlencoded({ extended: true }));
